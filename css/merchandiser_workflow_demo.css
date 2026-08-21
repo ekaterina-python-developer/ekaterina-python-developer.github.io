@@ -1724,16 +1724,21 @@
 
 .mwd-ved-ctl {
   justify-content: center;
+  align-items: center;
   gap: 6px;
   cursor: pointer;
   white-space: nowrap;
   appearance: none;
   -webkit-appearance: none;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .mwd-ved-ctl-icon .mwd-ved-ico {
   flex-shrink: 0;
   display: block;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .mwd-ved-ctl:hover:not(:disabled) {
@@ -2731,3 +2736,5 @@
   display: inline-block;
   margin: 1px 2px 1px 0;
 }
+
+
