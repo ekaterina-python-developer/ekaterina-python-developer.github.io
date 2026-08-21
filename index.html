@@ -1,0 +1,1845 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кабинет товароведа · DEMO — MirOpt Stats</title>
+  <meta name="description" content="Демо-версия кабинета товароведа (мок-данные, без сервера). Для показа заказчику.">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/merchandiser_workflow_demo.css">
+  <style>
+    /* Статичное демо: сайдбар упрощён, без живых ссылок на бэкенд */
+    .nav a.nav-muted { opacity: 0.55; pointer-events: none; cursor: default; }
+    .demo-host-note {
+      margin: 0 0 12px;
+      padding: 10px 14px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #1e3a8a;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="layout" id="app-layout">
+    <aside class="sidebar" id="app-sidebar">
+      <div class="brand" style="justify-content:flex-start;margin-bottom:20px;">
+        <div class="brand-badge"></div>
+        <div>MirOpt Stats</div>
+      </div>
+      <nav class="nav">
+        <a href="#" class="nav-active">Кабинет товароведа (демо)</a>
+        <div class="nav-divider"></div>
+        <a href="#" class="nav-muted" title="В полной версии">Магазины</a>
+        <a href="#" class="nav-muted" title="В полной версии">Монитор</a>
+        <a href="#" class="nav-muted" title="В полной версии">Задачи</a>
+        <a href="#" class="nav-muted" title="В полной версии">Финансы</a>
+        <div class="nav-divider"></div>
+        <span style="display:block;padding:10px 12px;font-size:12px;opacity:.7;">Демо · без входа</span>
+      </nav>
+    </aside>
+    <div class="content">
+      <div class="topbar">
+        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-expanded="true" aria-controls="app-sidebar">Скрыть меню</button>
+        <h1>Кабинет товароведа</h1>
+      </div>
+      <p class="demo-host-note">
+        Статичная демо-версия для показа. Данные вымышленные (мок). Кнопки работают в браузере, на сервер ничего не уходит.
+      </p>
+<div class="mwd" id="mwd-root">
+  <div class="mwd-banner">
+    <span class="mwd-demo-badge">DEMO</span>
+    <span>Только вёрстка и мок-данные. Кнопки не пишут на сервер.</span>
+  </div>
+
+  <header class="mwd-header">
+    <div>
+      <h2 class="mwd-title">Кабинет товароведа</h2>
+      <p class="mwd-meta">
+        Склад: <strong>РЦ</strong>
+        <span class="mwd-dot">·</span>
+        Данные обновлены: <strong>сегодня 09:40 (мок)</strong>
+      </p>
+    </div>
+    <p class="mwd-flow-hint">Рабочий день: после списания остатков в 1С (FBO/FBS) → по шагам слева</p>
+  </header>
+
+  <div class="mwd-layout">
+    <nav class="mwd-nav" aria-label="Шаги рабочего дня">
+      <button type="button" class="mwd-nav-item is-active" data-screen="sales">
+        <span class="mwd-nav-num">1</span>
+        <span class="mwd-nav-label">Анализ продаж</span>
+      </button>
+      <button type="button" class="mwd-nav-item" data-screen="assembly">
+        <span class="mwd-nav-num">2</span>
+        <span class="mwd-nav-label">Сборка и остаток</span>
+      </button>
+      <button type="button" class="mwd-nav-item" data-screen="purchase">
+        <span class="mwd-nav-num">3</span>
+        <span class="mwd-nav-label">Анализ закупки</span>
+      </button>
+      <button type="button" class="mwd-nav-item" data-screen="passport">
+        <span class="mwd-nav-num">4</span>
+        <span class="mwd-nav-label">Паспорт / карточки / архив</span>
+      </button>
+      <button type="button" class="mwd-nav-item" data-screen="problems">
+        <span class="mwd-nav-num">5</span>
+        <span class="mwd-nav-label">Проблемы с товаром</span>
+      </button>
+    </nav>
+
+    <div class="mwd-main">
+
+      
+      <section class="mwd-screen is-active" data-screen-panel="sales">
+        <h3 class="mwd-h">Анализ продаж</h3>
+        <p class="mwd-sub">После списания остатков в 1С (FBO/FBS) · левые колонки зафиксированы, период листается вправо</p>
+
+        <div class="mwd-filters">
+          <label class="mwd-field">
+            <span>Период от</span>
+            <input type="text" value="01.01.2025" readonly>
+          </label>
+          <label class="mwd-field">
+            <span>Период до</span>
+            <input type="text" value="01.01.2026" readonly>
+          </label>
+          <label class="mwd-field">
+            <span>Склад</span>
+            <input type="text" value="РЦ" disabled>
+          </label>
+          <label class="mwd-field mwd-field-grow">
+            <span>Поиск по артикулу / номенклатуре</span>
+            <input type="search" placeholder="например 953382" id="mwd-sales-search" autocomplete="off">
+          </label>
+          <button type="button" class="mwd-btn mwd-btn-primary" data-demo-toast>Применить</button>
+        </div>
+
+        <h4 class="mwd-block-title">Ведомость продаж по периоду</h4>
+        <div class="mwd-sa-wrap" id="mwd-sa-wrap">
+          <table class="mwd-sa-table" id="mwd-sales-table">
+            <colgroup>
+              <col class="mwd-sa-col-art">
+              <col class="mwd-sa-col-name">
+              <col class="mwd-sa-col-prio">
+              <col class="mwd-sa-col-in">
+              <col class="mwd-sa-col-out">
+              <col class="mwd-sa-col-qty">
+              <col class="mwd-sa-col-ret">
+              <col class="mwd-sa-col-retpct">
+              <col class="mwd-sa-col-chart">
+              <col span="13" class="mwd-sa-col-day">
+            </colgroup>
+            <thead>
+              <tr class="mwd-sa-head-row">
+                <th class="mwd-sa-sticky mwd-sa-s0">Артикул</th>
+                <th class="mwd-sa-sticky mwd-sa-s1">Номенклатура</th>
+                <th class="mwd-sa-sticky mwd-sa-s2">Приоритетность</th>
+                <th class="mwd-sa-sticky mwd-sa-s3">Сборки<br>приход</th>
+                <th class="mwd-sa-sticky mwd-sa-s4">Сборки<br>расход</th>
+                <th class="mwd-sa-sticky mwd-sa-s5">Количество<br>шт всего</th>
+                <th class="mwd-sa-sticky mwd-sa-s6">возврат</th>
+                <th class="mwd-sa-sticky mwd-sa-s7">Возврат<br>в %</th>
+                <th class="mwd-sa-sticky mwd-sa-s8">График</th>
+                <th class="mwd-sa-day">1/1/2025</th>
+                <th class="mwd-sa-day">2/1/2025</th>
+                <th class="mwd-sa-day">3/1/2025</th>
+                <th class="mwd-sa-day">4/1/2025</th>
+                <th class="mwd-sa-day">5/1/2025</th>
+                <th class="mwd-sa-day">6/1/2025</th>
+                <th class="mwd-sa-day">7/1/2025</th>
+                <th class="mwd-sa-day">8/1/2025</th>
+                <th class="mwd-sa-day">9/1/2025</th>
+                <th class="mwd-sa-day">10/1/2025</th>
+                <th class="mwd-sa-day">11/1/2025</th>
+                <th class="mwd-sa-day">12/1/2025</th>
+                <th class="mwd-sa-day">1/1/2026</th>
+              </tr>
+              <tr class="mwd-sa-totals-row">
+                <th class="mwd-sa-sticky mwd-sa-s0 mwd-sa-totals-title">Итоги</th>
+                <th class="mwd-sa-sticky mwd-sa-s1"></th>
+                <th class="mwd-sa-sticky mwd-sa-s2"></th>
+                <th class="mwd-sa-sticky mwd-sa-s3"></th>
+                <th class="mwd-sa-sticky mwd-sa-s4"></th>
+                <th class="mwd-sa-sticky mwd-sa-s5"></th>
+                <th class="mwd-sa-sticky mwd-sa-s6"></th>
+                <th class="mwd-sa-sticky mwd-sa-s7 mwd-sa-totals-label"></th>
+                <th class="mwd-sa-sticky mwd-sa-s8"></th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="10829">10829</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="12917">12917</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="13922">13922</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="23633">23633</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="15639">15639</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="10679">10679</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="11453">11453</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="12617">12617</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="14022">14022</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="20366">20366</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="13926">13926</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="19420">19420</th>
+                <th class="mwd-sa-day mwd-sa-hm" data-hm-group="totals" data-v="14041">14041</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-art="953382" data-prices="189,185,182,175,178,184,180,179,177,170,174,176,175" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">953382</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">НАСАДКА КРУГЛАЯ ДЛЯ ШВАБРЫ 250гр с ДЕРЕВ.ЧЕРЕНКОМ в КОЛПАЧКАХ крас. (953377/S71188) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">1</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">10094</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">48</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.5">0.5</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="953382" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="741">741</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="774">774</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="1008">1008</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="846">846</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="673">673</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="560">560</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="770">770</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="712">712</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="749">749</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="1320">1320</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="719">719</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="609">609</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="615">615</td>
+              </tr>
+              <tr data-art="711204" data-prices="320,318,315,305,310,322,318,316,314,300,308,312,310" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">711204</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">МЕТЛА СИБИРЯКОВАЯ 5-ти лучевая с черенком в сборе (711200/S70012) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num mwd-sa-prio-hot">2</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">2689</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">12</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.4">0.4</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="711204" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="210">210</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="245">245</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="198">198</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="312">312</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="188">188</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="155">155</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="201">201</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="176">176</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="190">190</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="280">280</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="165">165</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="142">142</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="150">150</td>
+              </tr>
+              <tr data-art="880441" data-prices="145,144,142,135,138,146,143,141,140,132,136,138,137" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">880441</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">ЧЕРЕНОК МЕТАЛЛ 120см с резьбой в термоусадке (880440) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">3</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">2520</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">8</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.3">0.3</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="880441" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="180">180</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="195">195</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="220">220</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="310">310</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="205">205</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="160">160</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="175">175</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="190">190</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="210">210</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="290">290</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="185">185</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="170">170</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="168">168</td>
+              </tr>
+              <tr data-art="120569" data-prices="149,148,145,138,142,150,147,146,144,136,141,0,145" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">120569</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Дневник школьный «Космос» 48 л (120569) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num mwd-sa-prio-hot">1</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num">80</td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">156</td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">1640</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">22</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="1.3">1.3</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="120569" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="95">95</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="110">110</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="128">128</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="210">210</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="145">145</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="88">88</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="102">102</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="118">118</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="135">135</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="190">190</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="122">122</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="0">0</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="98">98</td>
+              </tr>
+              <tr data-art="650975" data-prices="89,88,87,82,85,90,88,87,86,80,84,85,84" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">650975</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Батарейка AAA 4 шт blister (650975) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">4</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num">200</td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">388</td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">3320</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">96</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="2.9">2.9</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="650975" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="240">240</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="255">255</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="268">268</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="410">410</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="290">290</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="210">210</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="225">225</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="248">248</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="270">270</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="380">380</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="255">255</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="230">230</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="235">235</td>
+              </tr>
+              <tr data-art="44102" data-prices="199,198,195,188,192,200,197,196,194,185,190,0,193" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">44102</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Набор контейнеров 3 шт (44102) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num mwd-sa-prio-hot">2</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num">40</td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">71</td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">590</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">5</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.8">0.8</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="44102" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="42">42</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="38">38</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="55">55</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="78">78</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="50">50</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="31">31</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="40">40</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="44">44</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="48">48</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="72">72</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="46">46</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="0">0</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="35">35</td>
+              </tr>
+              <tr data-art="730077" data-prices="115,114,112,108,110,116,114,113,112,106,109,110,109" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">730077</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Мешок для мусора 60л 20шт (730077) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">5</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num">100</td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">210</td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">2000</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">18</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.9">0.9</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="730077" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="155">155</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="168">168</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="175">175</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="260">260</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="190">190</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="140">140</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="152">152</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="160">160</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="172">172</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="245">245</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="158">158</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="148">148</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="150">150</td>
+              </tr>
+              <tr data-art="2204" data-prices="69,68,67,62,65,70,68,67,66,60,64,65,64" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">2204</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Тряпка из микрофибры (2204) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">6</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">455</td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">3450</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">31</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.9">0.9</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="2204" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="280">280</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="295">295</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="310">310</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="420">420</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="330">330</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="250">250</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="265">265</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="275">275</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="300">300</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="390">390</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="270">270</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="255">255</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="260">260</td>
+              </tr>
+              <tr data-art="8801" data-prices="229,228,225,218,222,230,227,226,224,215,220,221,220" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">8801</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Ведро пластиковое 10л (8801) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num mwd-sa-prio-hot">1</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num">60</td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">38</td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">670</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">4</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.6">0.6</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="8801" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="48">48</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="52">52</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="60">60</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="95">95</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="70">70</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="40">40</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="45">45</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="50">50</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="55">55</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="88">88</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="58">58</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="42">42</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="44">44</td>
+              </tr>
+              <tr data-art="372539" data-prices="85,84,82,75,80,86,83,82,81,72,78,0,80" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">372539</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Брошь «День Победы» (372539) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">8</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">22</td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">128</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">1</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.8">0.8</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="372539" title="График цена/шт" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="8">8</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="12">12</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="15">15</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="28">28</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="10">10</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="5">5</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="6">6</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="9">9</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="11">11</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="20">20</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="0">0</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="4">4</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="7">7</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        
+        <div class="mwd-sa-footer" id="mwd-sa-footer">
+          <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-sa-prev">Назад</button>
+          <span class="mwd-sa-page-info" id="mwd-sa-page-info">Страница 1 из 1</span>
+          <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-sa-next">Вперед</button>
+          <label class="mwd-sa-page-size" title="Сколько строк на странице">
+            Строк:
+            <select id="mwd-sa-page-size">
+              <option value="5" selected>5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="mwd-sa-hint">Листай период вправо → · колонки до «График» остаются на месте · иконка 📊 — график цена/шт в окне</p>
+
+        <div class="mwd-sa-legend" aria-label="Как читать цвета таблицы">
+          <div class="mwd-sa-legend-title">Как читать цвета</div>
+          <ul class="mwd-sa-legend-list">
+            <li>
+              <span class="mwd-sa-swatch mwd-sa-swatch-scale" title="Мало → много продаж"></span>
+              <span><strong>Дни (шт)</strong> — тепловая карта: красный = меньше продаж, зелёный = больше.
+                В строке товара цвета сравнивают дни <em>этого</em> артикула между собой;
+                в «Итогах» — дни по сумме всех товаров.</span>
+            </li>
+            <li>
+              <span class="mwd-sa-swatch mwd-sa-swatch-retpct" title="Возврат %"></span>
+              <span><strong>Возврат в %</strong> — жёлтый → оранжевый: чем выше процент возвратов, тем оранжевее (примерно до 3%).</span>
+            </li>
+            <li>
+              <span class="mwd-sa-swatch mwd-sa-swatch-ret" title="Возврат шт"></span>
+              <span><strong>Возврат (шт)</strong> — розовый фон, чтобы колонку было видно сразу.</span>
+            </li>
+            <li>
+              <span class="mwd-sa-swatch mwd-sa-swatch-prio" title="Приоритет"></span>
+              <span><strong>Приоритетность</strong> — красная ячейка = «горячий» приоритет (нужно внимание).</span>
+            </li>
+          </ul>
+        </div>
+
+      </section>
+
+      
+      <section class="mwd-screen" data-screen-panel="assembly">
+        <h3 class="mwd-h">Сборка товара и остаток</h3>
+        <div class="mwd-hint">
+          <strong>Подсказка:</strong> Вид 1С → выгрузить реестр сборок.
+          <button type="button" class="mwd-btn mwd-btn-sm" data-demo-toast>Загрузить реестр</button>
+        </div>
+
+        <h4 class="mwd-block-title">Товар в сборках и остаток</h4>
+        <div class="mwd-table-wrap">
+          <table class="mwd-table">
+            <thead>
+              <tr>
+                <th>Статус</th>
+                <th>Артикул</th>
+                <th>Наименование</th>
+                <th class="num">В сборках, шт</th>
+                <th class="num">Остаток РЦ, шт</th>
+                <th class="num">Разница</th>
+                <th class="num">Сумма, ₽</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+                <td class="mwd-art">91044</td>
+                <td>Кошелёк женский экокожа чёрный</td>
+                <td class="num">100</td>
+                <td class="num">112</td>
+                <td class="num">+12</td>
+                <td class="num">28 400</td>
+              </tr>
+              <tr>
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+                <td class="mwd-art">55110</td>
+                <td>Граббер для мусора телескопический</td>
+                <td class="num">50</td>
+                <td class="num">69</td>
+                <td class="num">+19</td>
+                <td class="num">12 650</td>
+              </tr>
+              <tr>
+                <td><span class="mwd-st mwd-st-out">выводим</span></td>
+                <td class="mwd-art">66201</td>
+                <td>Бампер силиконовый iPhone 13</td>
+                <td class="num">50</td>
+                <td class="num">18</td>
+                <td class="num mwd-neg">−32</td>
+                <td class="num">3 240</td>
+              </tr>
+              <tr>
+                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
+                <td class="mwd-art">650975</td>
+                <td>Батарейка AAA 4 шт blister</td>
+                <td class="num">0</td>
+                <td class="num">332</td>
+                <td class="num">+332</td>
+                <td class="num">14 940</td>
+              </tr>
+              <tr>
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+                <td class="mwd-art">77012</td>
+                <td>Набор резинок для волос 20 шт</td>
+                <td class="num">80</td>
+                <td class="num">95</td>
+                <td class="num">+15</td>
+                <td class="num">4 750</td>
+              </tr>
+              <tr>
+                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
+                <td class="mwd-art">120569</td>
+                <td>Дневник школьный «Космос» 48 л</td>
+                <td class="num">0</td>
+                <td class="num">164</td>
+                <td class="num">+164</td>
+                <td class="num">23 780</td>
+              </tr>
+              <tr>
+                <td><span class="mwd-st mwd-st-out">выводим</span></td>
+                <td class="mwd-art">372539</td>
+                <td>Брошь «День Победы»</td>
+                <td class="num">20</td>
+                <td class="num">128</td>
+                <td class="num">+108</td>
+                <td class="num">6 400</td>
+              </tr>
+              <tr>
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+                <td class="mwd-art">44102</td>
+                <td>Набор контейнеров 3 шт</td>
+                <td class="num">30</td>
+                <td class="num">59</td>
+                <td class="num">+29</td>
+                <td class="num">11 505</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mwd-totals">
+          <div>
+            Итого остаток РЦ:
+            <strong>977 шт</strong>
+          </div>
+          <div>
+            Разница (остаток − сборки):
+            <strong>+647 шт</strong>
+          </div>
+          <div>
+            Сумма остатка:
+            <strong>105 665 ₽</strong>
+          </div>
+        </div>
+      </section>
+
+      
+      <section class="mwd-screen" data-screen-panel="purchase">
+        <h3 class="mwd-h">Анализ закупки товара</h3>
+        <p class="mwd-sub">Монитор товароведа · источник: выгрузки 1С (ведомость, остатки, закуп) — в демо статично</p>
+
+        <div class="mwd-kpi">
+          <div class="mwd-kpi-card">
+            <div class="mwd-kpi-label">SKU в работе</div>
+            <div class="mwd-kpi-val">48</div>
+          </div>
+          <div class="mwd-kpi-card">
+            <div class="mwd-kpi-label">К заказу сегодня</div>
+            <div class="mwd-kpi-val">7</div>
+          </div>
+          <div class="mwd-kpi-card">
+            <div class="mwd-kpi-label">Сумма заказа</div>
+            <div class="mwd-kpi-val">186 400 ₽</div>
+          </div>
+          <div class="mwd-kpi-card">
+            <div class="mwd-kpi-label">Излишки</div>
+            <div class="mwd-kpi-val">12</div>
+          </div>
+        </div>
+
+        <div class="mwd-filters">
+          <label class="mwd-field">
+            <span>Статус</span>
+            <select id="mwd-purchase-status">
+              <option value="">Все</option>
+              <option value="выводим">выводим</option>
+              <option value="для сборки">для сборки</option>
+              <option value="передано">передано</option>
+              <option value="актуально">актуально</option>
+            </select>
+          </label>
+          <button type="button" class="mwd-btn" data-demo-toast>Сформировать заказ</button>
+        </div>
+
+        <div class="mwd-table-wrap">
+          <table class="mwd-table" id="mwd-purchase-table">
+            <thead>
+              <tr>
+                <th>Статус</th>
+                <th>Артикул 1С</th>
+                <th>Номенклатура</th>
+                <th>Поставщик</th>
+                <th class="num">Передачи 30 дн</th>
+                <th class="num">Передачи 7 дн</th>
+                <th class="num">Доступно</th>
+                <th class="num">Излишек &gt;1 мес</th>
+                <th class="num">Оборачиваемость</th>
+                <th class="num">Цена закупки</th>
+                <th class="num">Заказать, шт</th>
+                <th class="num">Сумма заказа</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-status="актуально">
+                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
+                <td class="mwd-art">650975</td>
+                <td>Батарейка AAA 4 шт blister</td>
+                <td>ООО «Энергопак»</td>
+                <td class="num">388</td>
+                <td class="num">120</td>
+                <td class="num">332</td>
+                <td class="num">0</td>
+                <td class="num">18 дн</td>
+                <td class="num">45 ₽</td>
+                <td class="num">200</td>
+                <td class="num">9 000 ₽</td>
+              </tr>
+              <tr data-status="для сборки">
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+                <td class="mwd-art">91044</td>
+                <td>Кошелёк женский экокожа чёрный</td>
+                <td>ИП Смирнова</td>
+                <td class="num">48</td>
+                <td class="num">48</td>
+                <td class="num">112</td>
+                <td class="num">0</td>
+                <td class="num">42 дн</td>
+                <td class="num">254 ₽</td>
+                <td class="num">100</td>
+                <td class="num">25 400 ₽</td>
+              </tr>
+              <tr data-status="для сборки">
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+                <td class="mwd-art">55110</td>
+                <td>Граббер для мусора телескопический</td>
+                <td>ООО «ХозТорг»</td>
+                <td class="num">61</td>
+                <td class="num">30</td>
+                <td class="num">69</td>
+                <td class="num">0</td>
+                <td class="num">25 дн</td>
+                <td class="num">183 ₽</td>
+                <td class="num">50</td>
+                <td class="num">9 150 ₽</td>
+              </tr>
+              <tr data-status="выводим">
+                <td><span class="mwd-st mwd-st-out">выводим</span></td>
+                <td class="mwd-art">66201</td>
+                <td>Бампер силиконовый iPhone 13</td>
+                <td>—</td>
+                <td class="num">5</td>
+                <td class="num">0</td>
+                <td class="num">18</td>
+                <td class="num">18</td>
+                <td class="num">120 дн</td>
+                <td class="num">180 ₽</td>
+                <td class="num">—</td>
+                <td class="num mwd-muted">нет заказа</td>
+              </tr>
+              <tr data-status="актуально">
+                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
+                <td class="mwd-art">730077</td>
+                <td>Мешок для мусора 60л 20шт</td>
+                <td>ООО «ПакЛин»</td>
+                <td class="num">210</td>
+                <td class="num">100</td>
+                <td class="num">200</td>
+                <td class="num">0</td>
+                <td class="num">22 дн</td>
+                <td class="num">42 ₽</td>
+                <td class="num">300</td>
+                <td class="num">12 600 ₽</td>
+              </tr>
+              <tr data-status="передано">
+                <td><span class="mwd-st mwd-st-sent">передано</span></td>
+                <td class="mwd-art">120569</td>
+                <td>Дневник школьный «Космос» 48 л</td>
+                <td>ООО «КанцОпт»</td>
+                <td class="num">156</td>
+                <td class="num">49</td>
+                <td class="num">164</td>
+                <td class="num">0</td>
+                <td class="num">28 дн</td>
+                <td class="num">78 ₽</td>
+                <td class="num">150</td>
+                <td class="num">11 700 ₽</td>
+              </tr>
+              <tr data-status="актуально">
+                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
+                <td class="mwd-art">2204</td>
+                <td>Тряпка из микрофибры</td>
+                <td>ООО «ТекстильПро»</td>
+                <td class="num">455</td>
+                <td class="num">120</td>
+                <td class="num">345</td>
+                <td class="num">40</td>
+                <td class="num">15 дн</td>
+                <td class="num">22 ₽</td>
+                <td class="num">500</td>
+                <td class="num">11 000 ₽</td>
+              </tr>
+              <tr data-status="выводим">
+                <td><span class="mwd-st mwd-st-out">выводим</span></td>
+                <td class="mwd-art">372539</td>
+                <td>Брошь «День Победы»</td>
+                <td>—</td>
+                <td class="num">22</td>
+                <td class="num">0</td>
+                <td class="num">128</td>
+                <td class="num">100</td>
+                <td class="num">95 дн</td>
+                <td class="num">50 ₽</td>
+                <td class="num">—</td>
+                <td class="num mwd-muted">нет заказа</td>
+              </tr>
+              <tr data-status="для сборки">
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+                <td class="mwd-art">66201-KIT</td>
+                <td>Бампер + плёнка (сборка)</td>
+                <td>ООО «Аксессуар»</td>
+                <td class="num">40</td>
+                <td class="num">15</td>
+                <td class="num">8</td>
+                <td class="num">0</td>
+                <td class="num">12 дн</td>
+                <td class="num">210 ₽</td>
+                <td class="num">80</td>
+                <td class="num">16 800 ₽</td>
+              </tr>
+              <tr data-status="актуально">
+                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
+                <td class="mwd-art">8801</td>
+                <td>Ведро пластиковое 10л</td>
+                <td>ООО «ХозТорг»</td>
+                <td class="num">38</td>
+                <td class="num">12</td>
+                <td class="num">67</td>
+                <td class="num">0</td>
+                <td class="num">35 дн</td>
+                <td class="num">95 ₽</td>
+                <td class="num">60</td>
+                <td class="num">5 700 ₽</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      
+      <section class="mwd-screen" data-screen-panel="passport">
+        <h3 class="mwd-h">Паспорт / карточки / архив</h3>
+
+        <div class="mwd-subtabs" id="mwd-passport-tabs">
+          <button type="button" class="mwd-subtab is-active" data-sub="vedomost">Ведомость товара из 1С</button>
+          <button type="button" class="mwd-subtab" data-sub="pass">Паспорт товара</button>
+          <button type="button" class="mwd-subtab" data-sub="cards">Контроль карточек</button>
+          <button type="button" class="mwd-subtab" data-sub="archive">Карточки в архив</button>
+        </div>
+
+        
+        <div class="mwd-subpanel is-active" data-sub-panel="vedomost">
+          <div class="mwd-ved-bar" id="mwd-ved-bar">
+            <label class="mwd-ved-field mwd-ved-field-search">
+              <span class="mwd-ved-field-lab">Поиск</span>
+              <span class="mwd-ved-search-wrap">
+                <input type="search" class="mwd-ved-search" placeholder="артикул / номенклатура" id="mwd-ved-search" autocomplete="off" aria-label="Поиск по артикулу / номенклатуре">
+                <span class="mwd-ved-count" id="mwd-ved-count"></span>
+              </span>
+            </label>
+            <div class="mwd-ved-bar-acts" id="mwd-ved-bar-normal">
+              <div class="mwd-ved-field">
+                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
+                <button type="button" class="mwd-ved-ctl mwd-ved-ctl-icon" id="mwd-ved-enter-select">
+                  <svg class="mwd-ved-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M3.5 1.2l9.2 6.1c.55.36.3 1.2-.35 1.2H8.3l-1.7 5.1c-.18.55-.97.5-1.07-.07L3.5 1.2z"/>
+                  </svg>
+                  Выбрать несколько
+                </button>
+              </div>
+            </div>
+            <div class="mwd-ved-bar-acts mwd-ved-bar-select" id="mwd-ved-bulk" hidden>
+              <div class="mwd-ved-field mwd-ved-picked-info">
+                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
+                <span class="mwd-ved-picked-info-txt" id="mwd-ved-pick-count">Выбрано: 0</span>
+              </div>
+              <span class="mwd-ved-pick-label" id="mwd-ved-pick-label" hidden>Ничего не выбрано</span>
+              <div class="mwd-ved-field">
+                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
+                <button type="button" class="mwd-ved-ctl" id="mwd-ved-edit-selected" disabled>Редактировать</button>
+              </div>
+              <label class="mwd-ved-field mwd-ved-bulk-arch" id="mwd-ved-bulk-arch">
+                <span class="mwd-ved-field-lab">Карточки в архив</span>
+                <span class="mwd-ved-ctl mwd-ved-ctl-select">
+                  <span class="mwd-ved-bulk-arch-txt">выбрать…</span>
+                  <span class="mwd-ved-bulk-arch-caret" aria-hidden="true">▾</span>
+                  <select id="mwd-ved-bulk-arch-sel" aria-label="Карточки в архив" disabled>
+                    <option value="" selected disabled>выбрать…</option>
+                    <option value="none">снять</option>
+                    <option value="plan">Планируем</option>
+                    <option value="remainder">Продаём остаток</option>
+                    <option value="archive">В архив</option>
+                  </select>
+                </span>
+              </label>
+              <div class="mwd-ved-field">
+                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
+                <button type="button" class="mwd-ved-ctl mwd-ved-ctl-danger" id="mwd-ved-clear-pick">Снять выбор</button>
+              </div>
+            </div>
+          </div>
+          <div class="mwd-table-wrap">
+            <table class="mwd-table" id="mwd-vedomost-table">
+              <thead>
+                <tr>
+                  <th class="mwd-ved-check">
+                    <input type="checkbox" id="mwd-ved-check-all" title="Выбрать все видимые" aria-label="Выбрать все видимые">
+                  </th>
+                  <th>Артикул</th>
+                  <th>Номенклатура</th>
+                  <th>Ед.</th>
+                  <th class="num">В наличии</th>
+                  <th class="num">Доступно</th>
+                  <th class="num">В резерве</th>
+                  <th class="num">В пути</th>
+                  <th class="num">Себест., ₽</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="mwd-ved-row" data-art="401084" data-name="Мочалка овал">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">401084</td>
+                  <td>Мочалка овал</td>
+                  <td>шт</td>
+                  <td class="num">1 240</td>
+                  <td class="num">1 180</td>
+                  <td class="num">40</td>
+                  <td class="num">200</td>
+                  <td class="num">18,50</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="953382" data-name="Насадка круглая для швабры 250гр">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">953382</td>
+                  <td>Насадка круглая для швабры 250гр с дерев. черенком</td>
+                  <td>шт</td>
+                  <td class="num">860</td>
+                  <td class="num">810</td>
+                  <td class="num">50</td>
+                  <td class="num">0</td>
+                  <td class="num">42,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="711204" data-name="Метла сибиряковая 5-ти лучевая">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">711204</td>
+                  <td>Метла сибиряковая 5-ти лучевая с черенком</td>
+                  <td>шт</td>
+                  <td class="num">312</td>
+                  <td class="num">290</td>
+                  <td class="num">22</td>
+                  <td class="num">100</td>
+                  <td class="num">89,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="880441" data-name="Щётка для пола деревянная">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">880441</td>
+                  <td>Щётка для пола деревянная 30 см</td>
+                  <td>шт</td>
+                  <td class="num">540</td>
+                  <td class="num">520</td>
+                  <td class="num">20</td>
+                  <td class="num">0</td>
+                  <td class="num">67,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="91044" data-name="Кошелёк женский экокожа чёрный">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">91044</td>
+                  <td>Кошелёк женский экокожа чёрный</td>
+                  <td>шт</td>
+                  <td class="num">112</td>
+                  <td class="num">98</td>
+                  <td class="num">14</td>
+                  <td class="num">50</td>
+                  <td class="num">254,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="650975" data-name="Батарейка AAA 4 шт blister">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">650975</td>
+                  <td>Батарейка AAA 4 шт blister</td>
+                  <td>уп</td>
+                  <td class="num">2 100</td>
+                  <td class="num">2 040</td>
+                  <td class="num">60</td>
+                  <td class="num">500</td>
+                  <td class="num">45,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="55110" data-name="Граббер для мусора телескопический">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">55110</td>
+                  <td>Граббер для мусора телескопический</td>
+                  <td>шт</td>
+                  <td class="num">69</td>
+                  <td class="num">55</td>
+                  <td class="num">14</td>
+                  <td class="num">30</td>
+                  <td class="num">183,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="82220" data-name="Бант атласный красный 8 см" data-arch="remainder">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">82220</td>
+                  <td>Бант атласный красный 8 см</td>
+                  <td>шт</td>
+                  <td class="num">1 800</td>
+                  <td class="num">1 750</td>
+                  <td class="num">50</td>
+                  <td class="num">0</td>
+                  <td class="num">12,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="66201" data-name="Бампер силиконовый iPhone 13" data-arch="plan">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">66201</td>
+                  <td>Бампер силиконовый iPhone 13</td>
+                  <td>шт</td>
+                  <td class="num">44</td>
+                  <td class="num">40</td>
+                  <td class="num">4</td>
+                  <td class="num">0</td>
+                  <td class="num">95,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="372539" data-name="Брошь «День Победы»" data-arch="plan">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">372539</td>
+                  <td>Брошь «День Победы»</td>
+                  <td>шт</td>
+                  <td class="num">220</td>
+                  <td class="num">210</td>
+                  <td class="num">10</td>
+                  <td class="num">0</td>
+                  <td class="num">28,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="4401" data-name="Набор новогодних шаров" data-arch="remainder">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">4401</td>
+                  <td>Набор новогодних шаров (6 шт)</td>
+                  <td>наб</td>
+                  <td class="num">90</td>
+                  <td class="num">78</td>
+                  <td class="num">12</td>
+                  <td class="num">0</td>
+                  <td class="num">156,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="3308" data-name="Гирлянда LED 5 м" data-arch="remainder">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">3308</td>
+                  <td>Гирлянда LED 5 м тёплый свет</td>
+                  <td>шт</td>
+                  <td class="num">155</td>
+                  <td class="num">140</td>
+                  <td class="num">15</td>
+                  <td class="num">80</td>
+                  <td class="num">210,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="2204" data-name="Салфетка микрофибра 30×30">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">2204</td>
+                  <td>Салфетка микрофибра 30×30 (3 шт)</td>
+                  <td>уп</td>
+                  <td class="num">980</td>
+                  <td class="num">960</td>
+                  <td class="num">20</td>
+                  <td class="num">300</td>
+                  <td class="num">36,00</td>
+                </tr>
+                <tr class="mwd-ved-row" data-art="11990" data-name="Чехол устаревшей модели" data-arch="plan">
+                  <td class="mwd-ved-check"><input type="checkbox" class="mwd-ved-cb" aria-label="Выбрать"></td>
+                  <td class="mwd-art">11990</td>
+                  <td>Чехол устаревшей модели (вывод)</td>
+                  <td>шт</td>
+                  <td class="num">18</td>
+                  <td class="num">18</td>
+                  <td class="num">0</td>
+                  <td class="num">0</td>
+                  <td class="num">55,00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="mwd-ved-empty" id="mwd-ved-empty" hidden>Ничего не найдено — попробуйте другой артикул или название</p>
+          <p class="mwd-footnote">Источник: выгрузка 1С (остатки/номенклатура) — демо</p>
+        </div>
+
+        
+        <div class="mwd-subpanel" data-sub-panel="pass">
+          <div class="mwd-mode-toggle">
+            <button type="button" class="mwd-chip is-active" data-pass-mode="new">Новый товар</button>
+            <button type="button" class="mwd-chip" data-pass-mode="edit">Редакция старого</button>
+            <p class="mwd-sub" id="mwd-pass-context">Поля пустые · отметьте товары в ведомости и нажмите «Редактировать выбранные»</p>
+          </div>
+
+          <div class="mwd-pass-queue" id="mwd-pass-queue" hidden>
+            <div class="mwd-pass-queue-chips" id="mwd-pass-queue-chips"></div>
+          </div>
+
+          <div class="mwd-pass-innertabs" id="mwd-pass-innertabs" role="tablist" aria-label="Разделы паспорта">
+            <button type="button" class="mwd-pass-innertab is-active" data-pass-tab="main" role="tab" aria-selected="true">
+              📎 Главное и Документы
+              <span class="mwd-pass-tab-miss" data-pass-tab-miss hidden></span>
+            </button>
+            <button type="button" class="mwd-pass-innertab" data-pass-tab="logistics" role="tab" aria-selected="false">
+              📐 Логистика и Габариты
+              <span class="mwd-pass-tab-miss" data-pass-tab-miss hidden></span>
+            </button>
+            <button type="button" class="mwd-pass-innertab" data-pass-tab="content" role="tab" aria-selected="false">
+              ✍ Контент и Маркетинг
+              <span class="mwd-pass-tab-miss" data-pass-tab-miss hidden></span>
+            </button>
+            <button type="button" class="mwd-pass-innertab" data-pass-tab="media" role="tab" aria-selected="false">
+              📸 Медиафайлы
+              <span class="mwd-pass-tab-miss" data-pass-tab-miss hidden></span>
+            </button>
+          </div>
+
+          <form class="mwd-passport" id="mwd-passport-form" autocomplete="off" onsubmit="return false;">
+
+            
+            <div class="mwd-pass-tabpanel is-active" data-pass-tab-panel="main" role="tabpanel">
+              <div class="mwd-pass-main-layout">
+                <div class="mwd-pass-main-left">
+                  <fieldset class="mwd-pass-sec">
+                    <legend>Идентификация товара</legend>
+                    <div class="mwd-form-grid mwd-ident-grid">
+                      <label class="mwd-field mwd-ident-art">
+                        <span>Артикул 1С <em class="mwd-req">*</em></span>
+                        <input type="text" name="art" data-pass-field="art" data-pass-required="art" placeholder="например 401084">
+                      </label>
+                      <label class="mwd-field mwd-ident-name">
+                        <span>Название</span>
+                        <input type="text" name="name" data-pass-field="name" placeholder="—">
+                      </label>
+                      <label class="mwd-field">
+                        <span>Артикул поставщика</span>
+                        <input type="text" name="supplier_art" data-pass-field="supplier_art" placeholder="—">
+                      </label>
+                      <label class="mwd-field">
+                        <span>Код ТН ВЭД</span>
+                        <input type="text" name="tnved" data-pass-field="tnved" placeholder="—">
+                      </label>
+                      <label class="mwd-field">
+                        <span>Бренд</span>
+                        <input type="text" name="brand" data-pass-field="brand" placeholder="—">
+                      </label>
+                      <label class="mwd-field">
+                        <span>Страна производитель</span>
+                        <input type="text" name="country" data-pass-field="country" placeholder="—">
+                      </label>
+                      <label class="mwd-field mwd-field-nds mwd-nds-trigger">
+                        <span>НДС <em class="mwd-req">*</em></span>
+                        <select name="nds" data-pass-field="nds" data-pass-required="nds" id="mwd-pass-nds">
+                          <option value="">Сначала выберите НДС</option>
+                          <option value="22">22% (с НДС для ООО)</option>
+                          <option value="other">Другой НДС</option>
+                          <option value="none">Без НДС</option>
+                        </select>
+                        <span class="mwd-pass-cab-hint is-idle" id="mwd-pass-cab-hint" data-nds-state="" hidden></span>
+                      </label>
+                    </div>
+
+                    <div class="mwd-honest" id="mwd-pass-honest" data-honest-on="false">
+                      <div class="mwd-honest-row">
+                        <span class="mwd-honest-label">Честный Знак</span>
+                        <label class="mwd-switch">
+                          <input type="checkbox" data-pass-honest-toggle id="mwd-pass-honest-toggle">
+                          <span class="mwd-switch-ui" aria-hidden="true"></span>
+                          <span class="mwd-switch-text" data-pass-honest-label>Выкл</span>
+                        </label>
+                        <input type="hidden" data-pass-field="honest" value="">
+                      </div>
+                      <label class="mwd-field mwd-honest-cat" id="mwd-pass-honest-cat" hidden>
+                        <span>Категория маркировки <em class="mwd-req">*</em></span>
+                        <input type="text" data-pass-field="honest_category" placeholder="например: товары лёгкой промышленности">
+                      </label>
+                    </div>
+                  </fieldset>
+                </div>
+
+                <aside class="mwd-pass-main-right">
+                  <fieldset class="mwd-pass-sec mwd-pass-docs-sec">
+                    <legend>Документы</legend>
+                    <div class="mwd-docs" id="mwd-pass-docs">
+                      <div class="mwd-doc-block" data-doc-block="cert">
+                        <div class="mwd-doc-row">
+                          <span class="mwd-doc-name">Сертификат</span>
+                          <span class="mwd-doc-tag is-empty" data-pass-doc-status="cert">Не загружен</span>
+                        </div>
+                        <div class="mwd-doc-extra" data-doc-extra="cert">
+                          <div class="mwd-dropzone" data-doc-drop="cert" tabindex="0">
+                            <span class="mwd-dropzone-ico" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </span>
+                            <span class="mwd-dropzone-txt">Перетащите файл или кликните</span>
+                            <input type="file" data-doc-file="cert" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" hidden>
+                          </div>
+                          <div class="mwd-doc-file" data-doc-file-row="cert">
+                            <span class="mwd-doc-file-ico" aria-hidden="true">📄</span>
+                            <span class="mwd-doc-file-name" data-doc-file-name="cert"></span>
+                            <span class="mwd-doc-file-ext" data-doc-file-ext="cert"></span>
+                            <button type="button" class="mwd-doc-remove" data-doc-remove="cert" title="Удалить файл" aria-label="Удалить файл">
+                              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                          </div>
+                          <label class="mwd-field">
+                            <span>Срок действия до…</span>
+                            <input type="date" data-doc-expiry="cert">
+                          </label>
+                        </div>
+                      </div>
+                      <div class="mwd-doc-block" data-doc-block="decl">
+                        <div class="mwd-doc-row">
+                          <span class="mwd-doc-name">Декларация</span>
+                          <span class="mwd-doc-tag is-empty" data-pass-doc-status="decl">Не загружен</span>
+                        </div>
+                        <div class="mwd-doc-extra" data-doc-extra="decl" hidden>
+                          <div class="mwd-dropzone" data-doc-drop="decl" tabindex="0">
+                            <span class="mwd-dropzone-ico" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </span>
+                            <span class="mwd-dropzone-txt">Перетащите файл или кликните</span>
+                            <input type="file" data-doc-file="decl" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" hidden>
+                          </div>
+                          <div class="mwd-doc-file" data-doc-file-row="decl">
+                            <span class="mwd-doc-file-ico" aria-hidden="true">📄</span>
+                            <span class="mwd-doc-file-name" data-doc-file-name="decl"></span>
+                            <span class="mwd-doc-file-ext" data-doc-file-ext="decl"></span>
+                            <button type="button" class="mwd-doc-remove" data-doc-remove="decl" title="Удалить файл" aria-label="Удалить файл">
+                              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                          </div>
+                          <label class="mwd-field">
+                            <span>Срок действия до…</span>
+                            <input type="date" data-doc-expiry="decl">
+                          </label>
+                        </div>
+                      </div>
+                      <div class="mwd-doc-block" data-doc-block="refusal">
+                        <div class="mwd-doc-row">
+                          <span class="mwd-doc-name">Отказное письмо</span>
+                          <span class="mwd-doc-tag is-empty" data-pass-doc-status="refusal">Не загружен</span>
+                        </div>
+                        <div class="mwd-doc-extra" data-doc-extra="refusal" hidden>
+                          <div class="mwd-dropzone" data-doc-drop="refusal" tabindex="0">
+                            <span class="mwd-dropzone-ico" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </span>
+                            <span class="mwd-dropzone-txt">Перетащите файл или кликните</span>
+                            <input type="file" data-doc-file="refusal" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" hidden>
+                          </div>
+                          <div class="mwd-doc-file" data-doc-file-row="refusal">
+                            <span class="mwd-doc-file-ico" aria-hidden="true">📄</span>
+                            <span class="mwd-doc-file-name" data-doc-file-name="refusal"></span>
+                            <span class="mwd-doc-file-ext" data-doc-file-ext="refusal"></span>
+                            <button type="button" class="mwd-doc-remove" data-doc-remove="refusal" title="Удалить файл" aria-label="Удалить файл">
+                              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                          </div>
+                          <label class="mwd-field">
+                            <span>Срок действия до…</span>
+                            <input type="date" data-doc-expiry="refusal">
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </fieldset>
+                </aside>
+              </div>
+            </div>
+
+            
+            <div class="mwd-pass-tabpanel" data-pass-tab-panel="logistics" role="tabpanel" hidden>
+              <div class="mwd-dims-pair">
+                <fieldset class="mwd-pass-sec mwd-dims-card">
+                  <legend>Физические габариты товара</legend>
+                  <div class="mwd-form-grid">
+                    <label class="mwd-field">
+                      <span>Длина, см</span>
+                      <input type="text" data-pass-field="len" inputmode="decimal" placeholder="—">
+                    </label>
+                    <label class="mwd-field">
+                      <span>Ширина, см</span>
+                      <input type="text" data-pass-field="wid" inputmode="decimal" placeholder="—">
+                    </label>
+                    <label class="mwd-field">
+                      <span>Высота, см</span>
+                      <input type="text" data-pass-field="hei" inputmode="decimal" placeholder="—">
+                    </label>
+                    <label class="mwd-field">
+                      <span>Вес, кг</span>
+                      <input type="text" data-pass-field="weight" inputmode="decimal" placeholder="—">
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="mwd-pass-sec mwd-dims-card mwd-dims-card-pack">
+                  <legend>Габариты в упаковке <em class="mwd-req">*</em></legend>
+                  <div class="mwd-form-grid">
+                    <label class="mwd-field">
+                      <span>Длина, см</span>
+                      <input type="text" data-pass-field="pack_len" data-pass-required="pack" inputmode="decimal" placeholder="—">
+                    </label>
+                    <label class="mwd-field">
+                      <span>Ширина, см</span>
+                      <input type="text" data-pass-field="pack_wid" data-pass-required="pack" inputmode="decimal" placeholder="—">
+                    </label>
+                    <label class="mwd-field">
+                      <span>Высота, см</span>
+                      <input type="text" data-pass-field="pack_hei" data-pass-required="pack" inputmode="decimal" placeholder="—">
+                    </label>
+                    <label class="mwd-field">
+                      <span>Вес, гр</span>
+                      <input type="text" data-pass-field="pack_weight" inputmode="decimal" placeholder="—">
+                    </label>
+                    <label class="mwd-field mwd-field-volume">
+                      <span>Объём, л (авторасчёт)</span>
+                      <input type="text" data-pass-field="volume" class="mwd-volume-input" placeholder="—" disabled>
+                    </label>
+                    <label class="mwd-field">
+                      <span>Логистика из габаритов, ₽</span>
+                      <input type="text" data-pass-field="logistics" class="mwd-logistics-input" placeholder="—" readonly>
+                    </label>
+                  </div>
+
+                  <div class="mwd-tariff-box">
+                    <div class="mwd-tariff-head">
+                      <span class="mwd-tariff-cap">Тариф по объёму:</span>
+                      <span class="mwd-tariff-active-label" id="mwd-tariff-active-label">—</span>
+                      <details class="mwd-tariff-details">
+                        <summary>Показать все</summary>
+                        <div class="mwd-table-wrap mwd-tariff-wrap">
+                          <table class="mwd-table mwd-tariff" id="mwd-pass-tariff">
+                            <thead>
+                              <tr>
+                                <th>Объём</th>
+                                <th class="num">Тариф, ₽</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr data-tier-min="0" data-tier-max="0.2" data-tier-price="23"><td>0–0,2 л</td><td class="num">23</td></tr>
+                              <tr data-tier-min="0.2" data-tier-max="0.5" data-tier-price="28"><td>&gt;0,2–0,5 л</td><td class="num">28</td></tr>
+                              <tr data-tier-min="0.5" data-tier-max="1" data-tier-price="36"><td>0,5–1 л</td><td class="num">36</td></tr>
+                              <tr data-tier-min="1" data-tier-max="2" data-tier-price="48"><td>1–2 л</td><td class="num">48</td></tr>
+                              <tr data-tier-min="2" data-tier-max="3" data-tier-price="62"><td>2–3 л</td><td class="num">62</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
+
+              <fieldset class="mwd-pass-sec mwd-dims-bottom">
+                <legend>Комплектация и закупка</legend>
+                <div class="mwd-form-grid mwd-form-grid-2">
+                  <label class="mwd-field">
+                    <span>Кол-во в упаковке производителя</span>
+                    <input type="text" data-pass-field="pack_qty" placeholder="—">
+                  </label>
+                  <label class="mwd-field">
+                    <span>Стоимость закупки, ₽</span>
+                    <input type="text" data-pass-field="cost" placeholder="—" readonly>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
+            
+            <div class="mwd-pass-tabpanel" data-pass-tab-panel="content" role="tabpanel" hidden>
+              <fieldset class="mwd-pass-sec">
+                <legend>Тексты для карточек и менеджеров</legend>
+                <div class="mwd-content-stack">
+                  <label class="mwd-field mwd-field-wide">
+                    <span>Контент для карточки (УТП)</span>
+                    <textarea rows="3" data-pass-field="utp" placeholder="коротко: чем товар лучше конкурентов"></textarea>
+                  </label>
+                  <label class="mwd-field mwd-field-wide">
+                    <span>Преимущества</span>
+                    <textarea rows="5" data-pass-field="pros" placeholder="по строке на преимущество"></textarea>
+                  </label>
+                  <label class="mwd-field mwd-field-wide mwd-focus-box">
+                    <span>⚡ Фокус менеджеру</span>
+                    <textarea rows="3" data-pass-field="focus" placeholder="критичные инструкции к действию"></textarea>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
+            
+            <div class="mwd-pass-tabpanel" data-pass-tab-panel="media" role="tabpanel" hidden>
+              <fieldset class="mwd-pass-sec">
+                <legend>Загрузки фото / видео</legend>
+                <p class="mwd-media-hint">
+                  Перетащите сюда папку: одно фото — один слот, три фото — сетка добавит ещё два.
+                  Снимок с линейкой потом перетащите в красный кубик.
+                </p>
+                <div class="mwd-media-slots" id="mwd-pass-media-slots">
+                  <button type="button" class="mwd-media-slot" data-pass-media-slot="photo1" data-pass-media-kind="photo">
+                    <span class="mwd-media-slot-label">Фото</span>
+                    <span class="mwd-media-slot-status" data-slot-status>+</span>
+                  </button>
+                  <button type="button" class="mwd-media-slot" data-pass-media-slot="video" data-pass-media-kind="video">
+                    <span class="mwd-media-slot-label">Видео</span>
+                    <span class="mwd-media-slot-status" data-slot-status>+</span>
+                  </button>
+                  <button type="button" class="mwd-media-slot mwd-media-slot-critical is-empty" data-pass-media-slot="pack_photo" data-pass-media-kind="pack" data-pass-required="pack_photo" id="mwd-pass-pack-photo">
+                    <span class="mwd-media-slot-label">Фото упаковки с линейкой <em class="mwd-req">*</em></span>
+                    <span class="mwd-media-slot-status" data-slot-status>+</span>
+                  </button>
+                </div>
+                
+                <div id="mwd-pass-photos" class="mwd-visually-hidden" aria-hidden="true">
+                  <div class="mwd-photo-ph" data-legacy-photo="0">фото</div>
+                </div>
+                <span class="mwd-visually-hidden" data-pass-media="video">видео · плейсхолдер</span>
+                <span class="mwd-visually-hidden" data-pass-media="pack_photo">упаковка · плейсхолдер</span>
+              </fieldset>
+            </div>
+          </form>
+
+          <div class="mwd-pass-sticky-bar" id="mwd-pass-sticky-bar">
+            <div class="mwd-pass-req-hint" id="mwd-pass-req-hint" hidden>
+              <span class="mwd-pass-req-lead" id="mwd-pass-req-lead">Заполните обязательные поля</span>
+              <span class="mwd-pass-req-chips" id="mwd-pass-req-chips"></span>
+            </div>
+            <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-pass-create-art">Создать артикул для кабинета</button>
+          </div>
+        </div>
+
+        
+        <div class="mwd-subpanel" data-sub-panel="cards">
+          <h4 class="mwd-block-title">Контроль заведения карточек менеджерами</h4>
+
+          <div class="mwd-seg" id="mwd-cards-seg" role="tablist" aria-label="Разделы контроля карточек">
+            <button type="button" class="mwd-seg-btn is-active" data-cards-view="control" role="tab" aria-selected="true">
+              Контроль заведения
+            </button>
+            <button type="button" class="mwd-seg-btn" data-cards-view="tasks" role="tab" aria-selected="false" id="mwd-cards-seg-tasks">
+              Задачи менеджерам <span class="mwd-seg-count" id="mwd-cards-tasks-count">3</span>
+            </button>
+          </div>
+
+          <div class="mwd-cards-view is-active" data-cards-panel="control">
+            <p class="mwd-sub">
+              Контроль наличия · сводная таблица по товарам — демо.
+              Статусы: <strong>да</strong> / <strong>нет</strong> / <strong>замена</strong>.
+              Клик по строке (не по статусу) → паспорт · клик по «нет» / «замена» → задача.
+            </p>
+            <div class="mwd-table-wrap">
+              <table class="mwd-table mwd-cards-matrix" id="mwd-cards-matrix">
+                <thead>
+                  <tr>
+                    <th class="mwd-cards-sticky mwd-cards-s0">Артикул 1С</th>
+                    <th class="mwd-cards-sticky mwd-cards-s1">Название</th>
+                    <th colspan="4" class="mwd-cards-mp">Озон</th>
+                    <th colspan="4" class="mwd-cards-mp">ВБ</th>
+                  </tr>
+                  <tr class="mwd-cards-head2">
+                    <th class="mwd-cards-sticky mwd-cards-s0"></th>
+                    <th class="mwd-cards-sticky mwd-cards-s1"></th>
+                    <th>ГАА</th>
+                    <th>ЧМА</th>
+                    <th>ЧИА</th>
+                    <th>ООО</th>
+                    <th>ГАА</th>
+                    <th>ЧМА</th>
+                    <th>ЧИА</th>
+                    <th>ООО</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  
+                  <tr class="mwd-cards-row" data-art="401084" data-name="Мочалка овал">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">401084</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Мочалка овал</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st" data-prev="нет"><span class="mwd-badge mwd-badge-wait" title="Александр · НДС 22% — завести на ООО">в работе</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                  </tr>
+                  <tr class="mwd-cards-row" data-art="953382" data-name="Насадка круглая для швабры 250гр">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">953382</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Насадка круглая для швабры 250гр</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st" data-prev="замена"><span class="mwd-badge mwd-badge-wait" title="Игорь · Заменить артикул по новой маске">в работе</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                  </tr>
+                  <tr class="mwd-cards-row" data-art="711204" data-name="Метла сибиряковая 5-ти лучевая">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">711204</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Метла сибиряковая 5-ти лучевая</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                  </tr>
+                  <tr class="mwd-cards-row" data-art="880441" data-name="Щётка для пола деревянная">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">880441</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Щётка для пола деревянная 30 см</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                  </tr>
+                  <tr class="mwd-cards-row" data-art="91044" data-name="Кошелёк женский экокожа чёрный">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">91044</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Кошелёк женский экокожа чёрный</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st" data-prev="замена"><span class="mwd-badge mwd-badge-wait" title="Юлиана · Дубль — оставить одну карточку">в работе</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                  </tr>
+                  <tr class="mwd-cards-row" data-art="650975" data-name="Батарейка AAA 4 шт blister">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">650975</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Батарейка AAA 4 шт blister</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                  </tr>
+                  <tr class="mwd-cards-row" data-art="55110" data-name="Граббер для мусора телескопический">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">55110</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Граббер для мусора телескопический</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                  </tr>
+                  <tr class="mwd-cards-row" data-art="82220" data-name="Бант атласный красный 8 см">
+                    <td class="mwd-art mwd-cards-sticky mwd-cards-s0">82220</td>
+                    <td class="mwd-cards-sticky mwd-cards-s1">Бант атласный красный 8 см</td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-swap">замена</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-ok">да</span></td>
+                    <td class="mwd-cards-st"><span class="mwd-badge mwd-badge-swap">замена</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="mwd-footnote">
+              ООО — только при закупке с НДС 22%. Ставку НДС смотри в паспорте товара.
+              Статус «замена» — нужна замена артикула или ещё одна карточка.
+            </p>
+          </div>
+
+          <div class="mwd-cards-view" data-cards-panel="tasks" hidden>
+            <p class="mwd-sub">Поручения менеджерам по ячейкам «нет» / «замена» — демо.</p>
+            <div class="mwd-table-wrap">
+              <table class="mwd-table mwd-cards-tasks-table" id="mwd-cards-tasks-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <button type="button" class="mwd-th-sort is-desc" id="mwd-cards-tasks-sort-date" title="Сортировать по дате">
+                        Дата <span class="mwd-th-sort-ico" aria-hidden="true">▼</span>
+                      </button>
+                    </th>
+                    <th>Артикул</th>
+                    <th>Товар</th>
+                    <th>Кабинет</th>
+                    <th>Причина</th>
+                    <th>Менеджер</th>
+                    <th>Комментарий</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="mwd-cards-tasks-tbody">
+                  
+                  <tr data-art="401084" data-cab="Озон ООО" data-reason="нет" data-date="2026-08-20">
+                    <td>20.08.2026</td>
+                    <td class="mwd-art">401084</td>
+                    <td>Мочалка овал</td>
+                    <td>Озон ООО</td>
+                    <td><span class="mwd-badge mwd-badge-warn">нет</span></td>
+                    <td>Александр (менеджер Хозснаб)</td>
+                    <td>НДС 22% — завести на ООО</td>
+                    <td class="mwd-cards-task-acts">
+                      <button type="button" class="mwd-btn mwd-btn-sm" data-task-done>заведена</button>
+                      <button type="button" class="mwd-btn mwd-btn-sm" data-task-cancel>снять</button>
+                    </td>
+                  </tr>
+                  <tr data-art="953382" data-cab="ВБ ЧМА" data-reason="замена" data-date="2026-08-18">
+                    <td>18.08.2026</td>
+                    <td class="mwd-art">953382</td>
+                    <td>Насадка круглая для швабры 250гр</td>
+                    <td>ВБ ЧМА</td>
+                    <td><span class="mwd-badge mwd-badge-swap">замена</span></td>
+                    <td>Игорь (менеджер ЧМА)</td>
+                    <td>Заменить артикул по новой маске</td>
+                    <td class="mwd-cards-task-acts">
+                      <button type="button" class="mwd-btn mwd-btn-sm" data-task-done>заведена</button>
+                      <button type="button" class="mwd-btn mwd-btn-sm" data-task-cancel>снять</button>
+                    </td>
+                  </tr>
+                  <tr data-art="91044" data-cab="Озон ЧИА" data-reason="замена" data-date="2026-08-15">
+                    <td>15.08.2026</td>
+                    <td class="mwd-art">91044</td>
+                    <td>Кошелёк женский экокожа чёрный</td>
+                    <td>Озон ЧИА</td>
+                    <td><span class="mwd-badge mwd-badge-swap">замена</span></td>
+                    <td>Юлиана (менеджер Д&amp;С)</td>
+                    <td>Дубль — оставить одну карточку</td>
+                    <td class="mwd-cards-task-acts">
+                      <button type="button" class="mwd-btn mwd-btn-sm" data-task-done>заведена</button>
+                      <button type="button" class="mwd-btn mwd-btn-sm" data-task-cancel>снять</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="mwd-footnote" id="mwd-cards-tasks-empty" hidden>Нет открытых задач</p>
+          </div>
+        </div>
+
+        
+        <div class="mwd-subpanel" data-sub-panel="archive">
+          <p class="mwd-sub">Статус ставится в ведомости: кнопка «Выбрать несколько» → галочки → «Карточки в архив». Здесь — сводка.</p>
+          <div class="mwd-kanban" id="mwd-arch-kanban">
+            <div class="mwd-kanban-col" data-arch-col="plan">
+              <div class="mwd-kanban-h">Планируем <span class="mwd-kanban-n" data-arch-n></span></div>
+              <div class="mwd-kanban-body"></div>
+            </div>
+            <div class="mwd-kanban-col" data-arch-col="remainder">
+              <div class="mwd-kanban-h">Продаём остаток <span class="mwd-kanban-n" data-arch-n></span></div>
+              <div class="mwd-kanban-body"></div>
+            </div>
+            <div class="mwd-kanban-col" data-arch-col="archive">
+              <div class="mwd-kanban-h">В архив <span class="mwd-kanban-n" data-arch-n></span></div>
+              <div class="mwd-kanban-body"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      
+      <section class="mwd-screen" data-screen-panel="problems">
+        <h3 class="mwd-h">Проблемы с товаром</h3>
+        <p class="mwd-sub">Только UI · без реального workflow</p>
+
+        <div class="mwd-filters">
+          <label class="mwd-field">
+            <span>Приоритет</span>
+            <select id="mwd-problem-prio">
+              <option value="">Все</option>
+              <option value="высокий">высокий</option>
+              <option value="средний">средний</option>
+              <option value="низкий">низкий</option>
+            </select>
+          </label>
+          <button type="button" class="mwd-btn" data-demo-toast disabled>Создать задачу</button>
+        </div>
+
+        <div class="mwd-table-wrap">
+          <table class="mwd-table" id="mwd-problems-table">
+            <thead>
+              <tr>
+                <th>Артикул</th>
+                <th>Проблема</th>
+                <th>Приоритет</th>
+                <th>Ответственный</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-prio="высокий">
+                <td class="mwd-art">8801</td>
+                <td>Нет габаритов в 1С</td>
+                <td><span class="mwd-prio mwd-prio-hi">высокий</span></td>
+                <td>Товаровед</td>
+                <td>открыто</td>
+              </tr>
+              <tr data-prio="высокий">
+                <td class="mwd-art">730112</td>
+                <td>Расхождение 1С vs кабинет (литры)</td>
+                <td><span class="mwd-prio mwd-prio-hi">высокий</span></td>
+                <td>Игорь (менеджер ЧМА)</td>
+                <td>в работе</td>
+              </tr>
+              <tr data-prio="средний">
+                <td class="mwd-art">44102</td>
+                <td>Нет сертификата</td>
+                <td><span class="mwd-prio mwd-prio-mid">средний</span></td>
+                <td>Товаровед</td>
+                <td>открыто</td>
+              </tr>
+              <tr data-prio="высокий">
+                <td class="mwd-art">2204</td>
+                <td>Упущенные продажи: мало остатка при высоком расходе</td>
+                <td><span class="mwd-prio mwd-prio-hi">высокий</span></td>
+                <td>Товаровед</td>
+                <td>открыто</td>
+              </tr>
+              <tr data-prio="средний">
+                <td class="mwd-art">1002 / 1002а</td>
+                <td>Дубль карточки</td>
+                <td><span class="mwd-prio mwd-prio-mid">средний</span></td>
+                <td>Светлана (контент)</td>
+                <td>в работе</td>
+              </tr>
+              <tr data-prio="низкий">
+                <td class="mwd-art">372539</td>
+                <td>Устаревшее фото в ОЗОН АА</td>
+                <td><span class="mwd-prio mwd-prio-lo">низкий</span></td>
+                <td>Юлиана (менеджер Д&amp;С)</td>
+                <td>открыто</td>
+              </tr>
+              <tr data-prio="средний">
+                <td class="mwd-art">66201</td>
+                <td>Нет веса в паспорте</td>
+                <td><span class="mwd-prio mwd-prio-mid">средний</span></td>
+                <td>Товаровед</td>
+                <td>открыто</td>
+              </tr>
+              <tr data-prio="низкий">
+                <td class="mwd-art">82220</td>
+                <td>Расхождение названия 1С vs кабинет</td>
+                <td><span class="mwd-prio mwd-prio-lo">низкий</span></td>
+                <td>Александр (менеджер Хозснаб)</td>
+                <td>отложено</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="mwd-modal-overlay" id="mwd-sa-chart-modal" hidden>
+  <div class="mwd-modal" role="dialog" aria-modal="true" aria-labelledby="mwd-sa-chart-title">
+    <div class="mwd-modal-head">
+      <h3 class="mwd-modal-title" id="mwd-sa-chart-title">График</h3>
+      <button type="button" class="mwd-modal-close" id="mwd-sa-chart-close" aria-label="Закрыть">×</button>
+    </div>
+    <p class="mwd-chart-cap" id="mwd-sa-chart-cap"></p>
+    <div class="mwd-chart mwd-sa-chart">
+      <svg viewBox="0 0 680 280" role="img" aria-label="График: цена и остаток/шт по периоду" id="mwd-sa-chart-svg"></svg>
+    </div>
+  </div>
+</div>
+
+<div class="mwd-modal-overlay" id="mwd-create-art-modal" hidden>
+  <div class="mwd-modal mwd-modal-sm" role="dialog" aria-modal="true" aria-labelledby="mwd-create-art-title">
+    <div class="mwd-modal-head">
+      <h3 class="mwd-modal-title" id="mwd-create-art-title">Заведение артикула. Передать менеджеру</h3>
+      <button type="button" class="mwd-modal-close" id="mwd-create-art-close" aria-label="Закрыть">×</button>
+    </div>
+    <div class="mwd-modal-body">
+      <label class="mwd-field">
+        <span>Кабинет</span>
+        <select id="mwd-create-art-cabinet">
+          <option value="Озон ГАА" data-cab-kind="ip">Озон ГАА</option>
+          <option value="Озон ЧМА" data-cab-kind="ip">Озон ЧМА</option>
+          <option value="Озон ЧИА" data-cab-kind="ip">Озон ЧИА</option>
+          <option value="Озон ООО" data-cab-kind="ooo">Озон ООО</option>
+          <option value="ВБ ГАА" data-cab-kind="ip">ВБ ГАА</option>
+          <option value="ВБ ЧМА" data-cab-kind="ip">ВБ ЧМА</option>
+          <option value="ВБ ЧИА" data-cab-kind="ip">ВБ ЧИА</option>
+          <option value="ВБ ООО" data-cab-kind="ooo">ВБ ООО</option>
+        </select>
+      </label>
+      <label class="mwd-field">
+        <span>Артикул продавца (превью)</span>
+        <input type="text" id="mwd-create-art-preview" value="" readonly>
+      </label>
+      <label class="mwd-field">
+        <span>Комментарий</span>
+        <textarea rows="3" id="mwd-create-art-comment" placeholder="что передать менеджеру"></textarea>
+      </label>
+      <div class="mwd-actions">
+        <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-create-art-submit">Передать менеджеру</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="mwd-modal-overlay" id="mwd-cards-task-modal" hidden>
+  <div class="mwd-modal mwd-modal-sm" role="dialog" aria-modal="true" aria-labelledby="mwd-cards-task-title">
+    <div class="mwd-modal-head">
+      <h3 class="mwd-modal-title" id="mwd-cards-task-title">Задача менеджеру</h3>
+      <button type="button" class="mwd-modal-close" id="mwd-cards-task-close" aria-label="Закрыть">×</button>
+    </div>
+    <div class="mwd-modal-body">
+      <p class="mwd-sub" id="mwd-cards-task-sub">Передайте задачу по кабинету.</p>
+      <label class="mwd-field">
+        <span>Товар</span>
+        <input type="text" id="mwd-cards-task-product" value="" readonly>
+      </label>
+      <label class="mwd-field">
+        <span>Кабинет</span>
+        <input type="text" id="mwd-cards-task-cabinet" value="" readonly>
+      </label>
+      <label class="mwd-field">
+        <span>Причина</span>
+        <input type="text" id="mwd-cards-task-reason" value="" readonly>
+      </label>
+      <label class="mwd-field">
+        <span>Менеджер</span>
+        <select id="mwd-cards-task-manager">
+          <option value="Юлиана (менеджер Д&amp;С)">Юлиана (менеджер Д&amp;С)</option>
+          <option value="Игорь (менеджер ЧМА)">Игорь (менеджер ЧМА)</option>
+          <option value="Александр (менеджер Хозснаб)">Александр (менеджер Хозснаб)</option>
+        </select>
+      </label>
+      <label class="mwd-field">
+        <span>Комментарий</span>
+        <textarea rows="3" id="mwd-cards-task-comment" placeholder="что сделать в кабинете"></textarea>
+      </label>
+      <div class="mwd-actions">
+        <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-cards-task-submit">Передать менеджеру</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mwd-toast" id="mwd-toast" hidden>демо</div>
+
+</div>
+  </div>
+</div>
+<script>
+(function () {
+  var layout = document.getElementById("app-layout");
+  var toggle = document.getElementById("sidebar-toggle");
+  if (!layout || !toggle) return;
+  var storageKey = "miroptstats_sidebar_collapsed_demo";
+  function applyState(collapsed) {
+    layout.classList.toggle("layout-sidebar-collapsed", collapsed);
+    document.documentElement.classList.toggle("sidebar-collapsed", collapsed);
+    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    toggle.textContent = collapsed ? "Показать меню" : "Скрыть меню";
+  }
+  applyState(localStorage.getItem(storageKey) === "1");
+  toggle.addEventListener("click", function () {
+    var next = !layout.classList.contains("layout-sidebar-collapsed");
+    applyState(next);
+    try { localStorage.setItem(storageKey, next ? "1" : "0"); } catch (e) {}
+  });
+})();
+</script>
+<script src="js/merchandiser_workflow_demo.js"></script>
+</body>
+</html>

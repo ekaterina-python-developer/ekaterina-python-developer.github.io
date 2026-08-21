@@ -1,0 +1,366 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');
+
+:root {
+    --bg: #eef3fb;
+    --card: #ffffff;
+    --card-border: #e6edf6;
+    --text: #1f2a44;
+    --muted: #6b7a99;
+    --primary: #1d66d1;
+    --primary-dark: #0f4fb3;
+    --shadow: 0 18px 35px rgba(31, 42, 68, 0.12);
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: "Manrope", "Segoe UI", sans-serif;
+    background: radial-gradient(1200px 500px at 50% -10%, #f8fbff 0%, var(--bg) 60%);
+    color: var(--text);
+}
+a { color: var(--primary); text-decoration: none; }
+.page { min-height: 100vh; }
+
+.auth-main {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 40px 20px;
+}
+.auth-card {
+    width: 100%;
+    max-width: 540px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 28px 36px 32px;
+}
+.brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 16px;
+}
+.brand-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f2a65a, #4b9dff);
+    box-shadow: 0 6px 12px rgba(29, 102, 209, 0.2);
+}
+.auth-title { text-align: center; font-size: 22px; margin: 6px 0 18px; }
+.form p { margin: 0 0 14px; }
+label { font-weight: 600; font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    font: inherit;
+    background: #fbfdff;
+}
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #9cb8ef;
+    box-shadow: 0 0 0 3px rgba(29, 102, 209, 0.12);
+}
+button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+}
+button:hover { background: var(--primary-dark); }
+.form-actions { margin-top: 10px; }
+.auth-footer {
+    text-align: center;
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+    min-width: 0;
+    transition: grid-template-columns 0.2s ease;
+}
+.sidebar {
+    background: linear-gradient(180deg, #2c4b7a 0%, #1e3b66 100%);
+    color: #eaf1ff;
+    padding: 24px 18px;
+    overflow: hidden;
+    transition: opacity 0.2s ease, padding 0.2s ease;
+}
+.layout-sidebar-collapsed { grid-template-columns: 0 1fr; }
+.layout-sidebar-collapsed .sidebar {
+    padding-left: 0;
+    padding-right: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+html.sidebar-collapsed .layout { grid-template-columns: 0 1fr; }
+html.sidebar-collapsed .sidebar {
+    padding-left: 0;
+    padding-right: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.sidebar .brand {
+    justify-content: flex-start;
+    color: #eaf1ff;
+    margin-bottom: 28px;
+}
+.nav {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+}
+.nav a, .nav form button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: #eaf1ff;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.nav a:hover, .nav form button:hover { background: rgba(255, 255, 255, 0.12); }
+.nav a.nav-active { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.nav-divider { height: 1px; background: rgba(255,255,255,0.12); margin: 6px 0; }
+.nav-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); text-transform: uppercase; padding: 4px 12px 2px; }
+.nav-shop-name { font-size: 13px; font-weight: 700; color: #fff; padding: 4px 12px; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.content {
+    padding: 28px 32px;
+    min-width: 0;
+    overflow-x: hidden;
+}
+.topbar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+.topbar h1 { margin: 0; font-size: 22px; }
+.sidebar-toggle {
+    width: auto;
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border-radius: 10px;
+}
+.card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 18px;
+    min-width: 0;
+}
+.messages { list-style: none; padding: 0; margin: 0 0 18px; }
+.messages li { padding: 10px 12px; border-radius: 8px; background: #eef3ff; }
+.button-link {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: 700;
+}
+.button-link:hover { background: var(--primary-dark); color: #fff; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { border-bottom: 1px solid #e7edf7; padding: 10px 8px; text-align: left; white-space: pre-line; }
+th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.monitor-table-wrapper {
+    overflow: auto;
+    max-height: 76vh;
+    border: 1px solid #e7edf7;
+    border-radius: 10px;
+    position: relative;
+}
+.monitor-table {
+    min-width: 1600px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: fixed;
+}
+.monitor-table th,
+.monitor-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #e7edf7;
+    vertical-align: top;
+    white-space: normal;
+    box-sizing: border-box;
+    min-width: 120px;
+}
+.monitor-table thead th {
+    background: #f3f6ff;
+    position: sticky;
+    z-index: 2;
+    height: 32px;
+    max-height: 32px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.monitor-table thead tr:nth-child(1) th { top: 0; }
+.monitor-table thead tr:nth-child(2) th { top: 32px; }
+.monitor-table thead tr:nth-child(3) th { top: 64px; }
+.monitor-table thead tr:nth-child(4) th { top: 96px; }
+.monitor-image {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    display: block;
+}
+.monitor-cell-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    line-height: 1.2;
+    max-height: 2.4em;
+}
+.monitor-table .col-A {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: #fff;
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+}
+.monitor-table .col-B {
+    position: sticky;
+    left: 72px;
+    z-index: 3;
+    background: #fff;
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
+}
+.monitor-table .col-C {
+    position: sticky;
+    left: 212px;
+    z-index: 3;
+    background: #fff;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    box-shadow: 2px 0 0 #e7edf7;
+}
+.monitor-table thead .col-A,
+.monitor-table thead .col-B,
+.monitor-table thead .col-C {
+    background: #f3f6ff;
+    z-index: 4;
+}
+.monitor-table tbody .col-A,
+.monitor-table tbody .col-B,
+.monitor-table tbody .col-C {
+    z-index: 2;
+}
+
+/* Модалка «Новая задача по товару» (static/js/task_modal.js) —
+   переиспользуется на всех страницах, где есть товар. */
+.task-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, .5); display: none; align-items: center; justify-content: center; z-index: 9999; }
+.task-modal-overlay.is-open { display: flex; }
+.task-modal { background: #fff; border: 1px solid #d8dee9; border-radius: 12px; padding: 18px; min-width: 340px; max-width: 92vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 48px rgba(15, 23, 42, .25); }
+.task-modal h3 { margin: 0 0 12px; font-size: 14px; font-weight: 800; color: #1f2a44; text-transform: uppercase; letter-spacing: .04em; }
+.task-modal label { display: block; font-size: 12px; color: #51607c; margin-bottom: 4px; }
+.task-modal select, .task-modal textarea, .task-modal input[type=text] { width: 100%; padding: 8px; border: 1px solid #d8dee9; border-radius: 8px; font: inherit; margin-bottom: 12px; box-sizing: border-box; }
+.task-modal button { padding: 8px 14px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
+.task-modal .tm-create { background: #1d66d1; color: #fff; }
+.task-modal .tm-cancel { background: #e6edf6; color: #1f2a44; margin-left: 8px; }
+.task-modal .tm-result { font-size: 12px; color: #51607c; margin-top: 8px; white-space: pre-wrap; min-height: 16px; }
+/* Триггер-иконка «поставить задачу» рядом со строкой товара. */
+.task-trigger { cursor: pointer; opacity: .65; font-size: 13px; margin-left: 6px; text-decoration: none; }
+.task-trigger:hover { opacity: 1; }
+
+/* Глобальное копирование артикула (static/js/sku_copy.js).
+   Opt-in: [data-sku] / .sku-field — кнопка не ломает выравнивание в узких td. */
+.sku-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    min-width: 0;
+    vertical-align: middle;
+}
+.sku-field__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sku-copy-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    opacity: 0.55;
+    line-height: 1;
+}
+.sku-copy-btn:hover,
+.sku-copy-btn:focus-visible {
+    opacity: 1;
+    color: #1d66d1;
+    background: #eef4fb;
+}
+.sku-copy-btn.is-copied {
+    opacity: 1;
+    color: #16a34a;
+}
+.sku-copy-btn svg {
+    display: block;
+    pointer-events: none;
+}
+
+/* Финотчёты: артикул в первой колонке / рядом с названием товара. */
+.pc-table .sku-field,
+.pd-table .sku-field {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 2px;
+    max-width: 100%;
+    min-width: 0;
+}
+.pc-table .sku-field .pc-name,
+.pd-table .sku-field .pd-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.pc-table .sku-field .sku-copy-btn,
+.pd-table .sku-field .sku-copy-btn {
+    margin-top: 1px;
+}
+
+@media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+}
