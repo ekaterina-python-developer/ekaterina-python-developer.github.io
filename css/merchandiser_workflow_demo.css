@@ -1600,28 +1600,39 @@
   accent-color: var(--mwd-blue);
 }
 
+/* Выравнивание поиска и кнопки "Выбрать несколько" по одной линии */
 .mwd-ved-bar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px 16px;
-  background: #eef1f4;
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 10px;
 }
 
-.mwd-ved-field {
+.mwd-ved-field-search {
+  flex: 1 1 240px;
+  max-width: 420px;
+  min-width: 0;
+}
+
+.mwd-ved-bar-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-left: auto;
+}
+
+.mwd-ved-bar-acts .mwd-ved-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
 }
 
-.mwd-ved-field-lab {
-  display: block;
-  box-sizing: border-box;
+.mwd-ved-field-lab-spacer {
+  visibility: hidden;
   height: 12px;
+  display: block;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -1630,13 +1641,36 @@
   line-height: 12px;
 }
 
-.mwd-ved-field-lab-spacer {
-  visibility: hidden;
+.mwd-ved-ctl-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  min-height: 34px;
+  max-height: 34px;
+  padding: 0 14px;
+  border: 1px solid #d5dbe3;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--mwd-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1;
+  vertical-align: middle;
 }
 
-.mwd-ved-field-search {
-  flex: 1 1 240px;
-  max-width: 420px;
+.mwd-ved-ctl-icon:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #c5d0de;
+}
+
+.mwd-ved-ctl-icon .mwd-ved-ico {
+  flex-shrink: 0;
+  display: block;
+  line-height: 1;
 }
 
 .mwd-ved-search-wrap {
@@ -1646,19 +1680,12 @@
   height: 34px;
 }
 
-.mwd-ved-search,
-.mwd-ved-field-static,
-.mwd-ved-ctl,
-.mwd-ved-ctl-select,
-.mwd-ved-picked-info-txt {
-  display: inline-flex;
-  align-items: center;
-  box-sizing: border-box;
+.mwd-ved-search {
+  width: 100%;
   height: 34px;
   min-height: 34px;
   max-height: 34px;
-  margin: 0;
-  padding: 0 14px;
+  padding: 0 96px 0 10px;
   border: 1px solid #d5dbe3;
   border-radius: 6px;
   background: #fff;
@@ -1668,17 +1695,7 @@
   font-weight: 600;
   line-height: 1;
   vertical-align: middle;
-}
-
-.mwd-ved-search {
-  width: 100%;
-  padding: 0 96px 0 10px;
-}
-
-.mwd-ved-search:focus {
-  outline: none;
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  box-sizing: border-box;
 }
 
 .mwd-ved-field-static {
