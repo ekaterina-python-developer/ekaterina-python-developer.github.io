@@ -831,44 +831,30 @@
               </span>
             </label>
             <div class="mwd-ved-bar-acts" id="mwd-ved-bar-normal">
-              <div class="mwd-ved-field">
-                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
-                <button type="button" class="mwd-ved-ctl mwd-ved-ctl-icon" id="mwd-ved-enter-select">
-                  <svg class="mwd-ved-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M3.5 1.2l9.2 6.1c.55.36.3 1.2-.35 1.2H8.3l-1.7 5.1c-.18.55-.97.5-1.07-.07L3.5 1.2z"/>
-                  </svg>
-                  Выбрать несколько
-                </button>
-              </div>
+              <button type="button" class="mwd-ved-ctl mwd-ved-ctl-icon" id="mwd-ved-enter-select">
+                <svg class="mwd-ved-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M3.5 1.2l9.2 6.1c.55.36.3 1.2-.35 1.2H8.3l-1.7 5.1c-.18.55-.97.5-1.07-.07L3.5 1.2z"/>
+                </svg>
+                Выбрать несколько
+              </button>
             </div>
             <div class="mwd-ved-bar-acts mwd-ved-bar-select" id="mwd-ved-bulk" hidden>
-              <div class="mwd-ved-field mwd-ved-picked-info">
-                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
-                <span class="mwd-ved-picked-info-txt" id="mwd-ved-pick-count">Выбрано: 0</span>
-              </div>
+              <span class="mwd-ved-picked-info-txt" id="mwd-ved-pick-count">Выбрано: 0</span>
               <span class="mwd-ved-pick-label" id="mwd-ved-pick-label" hidden>Ничего не выбрано</span>
-              <div class="mwd-ved-field">
-                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
-                <button type="button" class="mwd-ved-ctl" id="mwd-ved-edit-selected" disabled>Редактировать</button>
-              </div>
-              <label class="mwd-ved-field mwd-ved-bulk-arch" id="mwd-ved-bulk-arch">
-                <span class="mwd-ved-field-lab">Карточки в архив</span>
-                <span class="mwd-ved-ctl mwd-ved-ctl-select">
-                  <span class="mwd-ved-bulk-arch-txt">выбрать…</span>
+              <button type="button" class="mwd-ved-ctl" id="mwd-ved-edit-selected" disabled>Редактировать паспорт</button>
+              <div class="mwd-ved-bulk-arch is-disabled" id="mwd-ved-bulk-arch">
+                <button type="button" class="mwd-ved-ctl mwd-ved-ctl-select" id="mwd-ved-bulk-arch-btn" disabled aria-haspopup="listbox" aria-expanded="false" aria-controls="mwd-ved-bulk-arch-menu">
+                  <span class="mwd-ved-bulk-arch-txt">Карточки в архив</span>
                   <span class="mwd-ved-bulk-arch-caret" aria-hidden="true">▾</span>
-                  <select id="mwd-ved-bulk-arch-sel" aria-label="Карточки в архив" disabled>
-                    <option value="" selected disabled>выбрать…</option>
-                    <option value="none">снять</option>
-                    <option value="plan">Планируем</option>
-                    <option value="remainder">Продаём остаток</option>
-                    <option value="archive">В архив</option>
-                  </select>
-                </span>
-              </label>
-              <div class="mwd-ved-field">
-                <span class="mwd-ved-field-lab mwd-ved-field-lab-spacer" aria-hidden="true">&nbsp;</span>
-                <button type="button" class="mwd-ved-ctl mwd-ved-ctl-danger" id="mwd-ved-clear-pick">Снять выбор</button>
+                </button>
+                <ul class="mwd-ved-bulk-arch-menu" id="mwd-ved-bulk-arch-menu" role="listbox" aria-label="Карточки в архив">
+                  <li role="option" tabindex="-1" data-value="plan">Планируем</li>
+                  <li role="option" tabindex="-1" data-value="remainder">Продаём остаток</li>
+                  <li role="option" tabindex="-1" data-value="archive">В архив</li>
+                  <li role="option" tabindex="-1" data-value="none">Снять</li>
+                </ul>
               </div>
+              <button type="button" class="mwd-ved-ctl mwd-ved-ctl-danger" id="mwd-ved-clear-pick">Снять выбор</button>
             </div>
           </div>
           <div class="mwd-table-wrap">

@@ -1563,7 +1563,8 @@
   var vedEditBtn = document.getElementById("mwd-ved-edit-selected");
   var vedBulk = document.getElementById("mwd-ved-bulk");
   var vedBulkArch = document.getElementById("mwd-ved-bulk-arch");
-  var vedBulkArchSel = document.getElementById("mwd-ved-bulk-arch-sel");
+  var vedBulkArchBtn = document.getElementById("mwd-ved-bulk-arch-btn");
+  var vedBulkArchMenu = document.getElementById("mwd-ved-bulk-arch-menu");
   var vedEnterSelect = document.getElementById("mwd-ved-enter-select");
   var vedBarNormal = document.getElementById("mwd-ved-bar-normal");
   var vedClearPick = document.getElementById("mwd-ved-clear-pick");
@@ -1688,21 +1689,27 @@
     if (vedBulk) vedBulk.hidden = !vedSelectMode;
     if (vedBarNormal) vedBarNormal.hidden = vedSelectMode;
     if (vedEditBtn) vedEditBtn.disabled = !has;
-    if (vedBulkArchSel) {
-      vedBulkArchSel.disabled = !has;
-      if (!has) {
-        vedBulkArchSel.selectedIndex = 0;
-        syncVedArchBtnLabel();
-      }
+    if (vedBulkArchBtn) {
+      vedBulkArchBtn.disabled = !has;
+      vedBulkArchBtn.setAttribute("aria-expanded", "false");
     }
+    if (vedBulkArch) {
+      vedBulkArch.classList.toggle("is-disabled", !has);
+      vedBulkArch.classList.remove("is-open");
+    }
+    if (!has) syncVedArchBtnLabel();
     if (vedTable) vedTable.classList.toggle("is-select-mode", vedSelectMode);
     syncVedCheckAll();
   }
 
   function syncVedArchBtnLabel() {
-    if (!vedBulkArchTxt || !vedBulkArchSel) return;
-    var opt = vedBulkArchSel.options[vedBulkArchSel.selectedIndex];
-    vedBulkArchTxt.textContent = opt && opt.value ? opt.text : "выбрать…";
+    if (vedBulkArchTxt) vedBulkArchTxt.textContent = "Карточки в архив";
+  }
+
+  function setVedArchMenuOpen(on) {
+    if (!vedBulkArch || !vedBulkArchBtn || vedBulkArch.classList.contains("is-disabled")) return;
+    vedBulkArch.classList.toggle("is-open", !!on);
+    vedBulkArchBtn.setAttribute("aria-expanded", on ? "true" : "false");
   }
 
   function clearVedPicks() {
@@ -2007,16 +2014,27 @@
     });
   }
 
-  if (vedBulkArchSel) {
-    vedBulkArchSel.addEventListener("change", function () {
-      var v = vedBulkArchSel.value;
+  if (vedBulkArch && vedBulkArchBtn && vedBulkArchMenu) {
+    vedBulkArchBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (vedBulkArchBtn.disabled) return;
+      setVedArchMenuOpen(!vedBulkArch.classList.contains("is-open"));
+    });
+    vedBulkArchMenu.addEventListener("click", function (e) {
+      var opt = e.target.closest("[data-value]");
+      if (!opt || vedBulkArch.classList.contains("is-disabled")) return;
+      var v = opt.getAttribute("data-value");
       if (!v) return;
       applyArchToPicked(v);
-      vedBulkArchSel.selectedIndex = 0;
       syncVedArchBtnLabel();
+      setVedArchMenuOpen(false);
     });
-    vedBulkArchSel.addEventListener("click", function (e) {
-      e.stopPropagation();
+    document.addEventListener("click", function (e) {
+      if (!vedBulkArch.contains(e.target)) setVedArchMenuOpen(false);
+    });
+    vedBulkArch.addEventListener("mouseleave", function () {
+      setVedArchMenuOpen(false);
     });
     syncVedArchBtnLabel();
   }
