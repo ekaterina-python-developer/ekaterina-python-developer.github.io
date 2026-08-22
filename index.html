@@ -1,54 +1,29 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Кабинет товароведа · DEMO — MirOpt Stats</title>
-  <meta name="description" content="Демо-версия кабинета товароведа (мок-данные, без сервера). Для показа заказчику.">
-  <link rel="stylesheet" href="css/app.css">
+  <title>Кабинет товароведа · DEMO</title>
   <link rel="stylesheet" href="css/merchandiser_workflow_demo.css">
   <style>
-    /* Статичное демо: сайдбар упрощён, без живых ссылок на бэкенд */
-    .nav a.nav-muted { opacity: 0.55; pointer-events: none; cursor: default; }
-    .demo-host-note {
-      margin: 0 0 12px;
-      padding: 10px 14px;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #1e3a8a;
-      font-weight: 600;
+    /* Минимальная обёртка вместо Django base_app.html + app.css */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: #1f2a44;
     }
+    .demo-shell {
+      max-width: 100%;
+      padding: 16px;
+      min-height: 100vh;
+    }
+    .demo-shell button { width: auto; }
   </style>
 </head>
 <body>
-<div class="page">
-  <div class="layout" id="app-layout">
-    <aside class="sidebar" id="app-sidebar">
-      <div class="brand" style="justify-content:flex-start;margin-bottom:20px;">
-        <div class="brand-badge"></div>
-        <div>MirOpt Stats</div>
-      </div>
-      <nav class="nav">
-        <a href="#" class="nav-active">Кабинет товароведа (демо)</a>
-        <div class="nav-divider"></div>
-        <a href="#" class="nav-muted" title="В полной версии">Магазины</a>
-        <a href="#" class="nav-muted" title="В полной версии">Монитор</a>
-        <a href="#" class="nav-muted" title="В полной версии">Задачи</a>
-        <a href="#" class="nav-muted" title="В полной версии">Финансы</a>
-        <div class="nav-divider"></div>
-        <span style="display:block;padding:10px 12px;font-size:12px;opacity:.7;">Демо · без входа</span>
-      </nav>
-    </aside>
-    <div class="content">
-      <div class="topbar">
-        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-expanded="true" aria-controls="app-sidebar">Скрыть меню</button>
-        <h1>Кабинет товароведа</h1>
-      </div>
-      <p class="demo-host-note">
-        Статичная демо-версия для показа. Данные вымышленные (мок). Кнопки работают в браузере, на сервер ничего не уходит.
-      </p>
+  <div class="demo-shell">
 <div class="mwd" id="mwd-root">
   <div class="mwd-banner">
     <span class="mwd-demo-badge">DEMO</span>
@@ -93,7 +68,7 @@
 
     <div class="mwd-main">
 
-      
+      {# ═══ 1. Анализ продаж ═══ #}
       <section class="mwd-screen is-active" data-screen-panel="sales">
         <h3 class="mwd-h">Анализ продаж</h3>
         <p class="mwd-sub">После списания остатков в 1С (FBO/FBS) · левые колонки зафиксированы, период листается вправо</p>
@@ -108,6 +83,14 @@
             <input type="text" value="01.01.2026" readonly>
           </label>
           <label class="mwd-field">
+            <span>Тип</span>
+            <select id="mwd-sales-mode">
+              <option value="">Все</option>
+              <option value="kit">готовые сборки</option>
+              <option value="donor">комплектующие</option>
+            </select>
+          </label>
+          <label class="mwd-field">
             <span>Склад</span>
             <input type="text" value="РЦ" disabled>
           </label>
@@ -116,6 +99,14 @@
             <input type="search" placeholder="например 953382" id="mwd-sales-search" autocomplete="off">
           </label>
           <button type="button" class="mwd-btn mwd-btn-primary" data-demo-toast>Применить</button>
+        </div>
+
+        <div class="mwd-sa-asm-filter" id="mwd-sa-asm-filter" hidden>
+          <div class="mwd-sa-asm-filter-body">
+            <strong id="mwd-sa-asm-filter-title">Сборки с этим товаром</strong>
+            <span id="mwd-sa-asm-filter-text"></span>
+          </div>
+          <button type="button" class="mwd-btn" id="mwd-sa-asm-filter-clear" title="Показать все товары снова">Сбросить фильтр</button>
         </div>
 
         <h4 class="mwd-block-title">Ведомость продаж по периоду</h4>
@@ -138,8 +129,8 @@
                 <th class="mwd-sa-sticky mwd-sa-s0">Артикул</th>
                 <th class="mwd-sa-sticky mwd-sa-s1">Номенклатура</th>
                 <th class="mwd-sa-sticky mwd-sa-s2">Приоритетность</th>
-                <th class="mwd-sa-sticky mwd-sa-s3">Сборки<br>приход</th>
-                <th class="mwd-sa-sticky mwd-sa-s4">Сборки<br>расход</th>
+                <th class="mwd-sa-sticky mwd-sa-s3" title="Приход по документам сборки (учёт 1С).">Сборки<br>приход</th>
+                <th class="mwd-sa-sticky mwd-sa-s4" title="Расход по документам сборки (учёт 1С).">Сборки<br>расход</th>
                 <th class="mwd-sa-sticky mwd-sa-s5">Количество<br>шт всего</th>
                 <th class="mwd-sa-sticky mwd-sa-s6">возврат</th>
                 <th class="mwd-sa-sticky mwd-sa-s7">Возврат<br>в %</th>
@@ -186,15 +177,15 @@
             <tbody>
               <tr data-art="953382" data-prices="189,185,182,175,178,184,180,179,177,170,174,176,175" class="mwd-sa-row">
                 <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">953382</td>
-                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">НАСАДКА КРУГЛАЯ ДЛЯ ШВАБРЫ 250гр с ДЕРЕВ.ЧЕРЕНКОМ в КОЛПАЧКАХ крас. (953377/S71188) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Насадка круглая для швабры 250гр</td>
                 <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">1</td>
                 <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
-                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">455</td>
                 <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">10094</td>
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">48</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.5">0.5</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="953382" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="953382" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="741">741</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="774">774</td>
@@ -212,15 +203,15 @@
               </tr>
               <tr data-art="711204" data-prices="320,318,315,305,310,322,318,316,314,300,308,312,310" class="mwd-sa-row">
                 <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">711204</td>
-                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">МЕТЛА СИБИРЯКОВАЯ 5-ти лучевая с черенком в сборе (711200/S70012) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">ГРАБЛИ веерные с черенком в сборе (730640+880440) С-Р</td>
                 <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num mwd-sa-prio-hot">2</td>
-                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num">50</td>
                 <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num"></td>
                 <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">2689</td>
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">12</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.4">0.4</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="711204" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="711204" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="210">210</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="245">245</td>
@@ -236,17 +227,17 @@
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="142">142</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="150">150</td>
               </tr>
-              <tr data-art="880441" data-prices="145,144,142,135,138,146,143,141,140,132,136,138,137" class="mwd-sa-row">
-                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">880441</td>
-                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">ЧЕРЕНОК МЕТАЛЛ 120см с резьбой в термоусадке (880440) С-Р</td>
+              <tr data-art="880440" data-prices="145,144,142,135,138,146,143,141,140,132,136,138,137" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">880440</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Черенок дерев. 120см с резьбой</td>
                 <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">3</td>
                 <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num"></td>
-                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num">100</td>
                 <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">2520</td>
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">8</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.3">0.3</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="880441" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="880440" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="180">180</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="195">195</td>
@@ -262,6 +253,32 @@
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="170">170</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="168">168</td>
               </tr>
+              <tr data-art="55120" data-prices="185,184,182,175,178,186,183,181,180,172,176,178,177" class="mwd-sa-row">
+                <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">55120</td>
+                <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Граббер для мусора набор (953382+880440) С-Р</td>
+                <td class="mwd-sa-sticky mwd-sa-s2 mwd-sa-num">2</td>
+                <td class="mwd-sa-sticky mwd-sa-s3 mwd-sa-num">50</td>
+                <td class="mwd-sa-sticky mwd-sa-s4 mwd-sa-num"></td>
+                <td class="mwd-sa-sticky mwd-sa-s5 mwd-sa-num">890</td>
+                <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">6</td>
+                <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.7">0.7</td>
+                <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
+                  <button type="button" class="btn-chart-icon" data-article="55120" title="График: цена, продажи, остаток" aria-label="График">📊</button>
+                </td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="62">62</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="70">70</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="75">75</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="110">110</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="80">80</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="55">55</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="60">60</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="68">68</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="72">72</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="95">95</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="58">58</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="50">50</td>
+                <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="52">52</td>
+              </tr>
               <tr data-art="120569" data-prices="149,148,145,138,142,150,147,146,144,136,141,0,145" class="mwd-sa-row">
                 <td class="mwd-sa-sticky mwd-sa-s0 mwd-sa-art">120569</td>
                 <td class="mwd-sa-sticky mwd-sa-s1 mwd-sa-name">Дневник школьный «Космос» 48 л (120569) С-Р</td>
@@ -272,7 +289,7 @@
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">22</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="1.3">1.3</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="120569" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="120569" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="95">95</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="110">110</td>
@@ -298,7 +315,7 @@
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">96</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="2.9">2.9</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="650975" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="650975" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="240">240</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="255">255</td>
@@ -324,7 +341,7 @@
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">5</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.8">0.8</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="44102" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="44102" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="42">42</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="38">38</td>
@@ -350,7 +367,7 @@
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">18</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.9">0.9</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="730077" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="730077" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="155">155</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="168">168</td>
@@ -376,7 +393,7 @@
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">31</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.9">0.9</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="2204" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="2204" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="280">280</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="295">295</td>
@@ -402,7 +419,7 @@
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">4</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.6">0.6</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="8801" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="8801" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="48">48</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="52">52</td>
@@ -428,7 +445,7 @@
                 <td class="mwd-sa-sticky mwd-sa-s6 mwd-sa-num mwd-sa-ret">1</td>
                 <td class="mwd-sa-sticky mwd-sa-s7 mwd-sa-num mwd-sa-retpct" data-retpct="0.8">0.8</td>
                 <td class="mwd-sa-sticky mwd-sa-s8 mwd-sa-chart-cell">
-                  <button type="button" class="btn-chart-icon" data-article="372539" title="График цена/шт" aria-label="График">📊</button>
+                  <button type="button" class="btn-chart-icon" data-article="372539" title="График: цена, продажи, остаток" aria-label="График">📊</button>
                 </td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="8">8</td>
                 <td class="mwd-sa-day mwd-sa-hm" data-hm-group="row" data-v="12">12</td>
@@ -448,7 +465,7 @@
           </table>
         </div>
 
-        
+        {# Пагинация и «Строк» — как в мониторе Ozon/WB (ozon_monitor.js footer) #}
         <div class="mwd-sa-footer" id="mwd-sa-footer">
           <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-sa-prev">Назад</button>
           <span class="mwd-sa-page-info" id="mwd-sa-page-info">Страница 1 из 1</span>
@@ -464,7 +481,7 @@
           </label>
         </div>
 
-        <p class="mwd-sa-hint">Листай период вправо → · колонки до «График» остаются на месте · иконка 📊 — график цена/шт в окне</p>
+        <p class="mwd-sa-hint">Листай период вправо → · колонки до «График» остаются на месте · иконка 📊 — график: цена, продажи, остаток</p>
 
         <div class="mwd-sa-legend" aria-label="Как читать цвета таблицы">
           <div class="mwd-sa-legend-title">Как читать цвета</div>
@@ -487,147 +504,248 @@
               <span class="mwd-sa-swatch mwd-sa-swatch-prio" title="Приоритет"></span>
               <span><strong>Приоритетность</strong> — красная ячейка = «горячий» приоритет (нужно внимание).</span>
             </li>
+            <li>
+              <span><strong>Тип / связь</strong> — фильтр «Тип»: готовые сборки или комплектующие
+                (это роль товара). «Статус» — другое: для сборки / дефицит / ок (остаток и работа).
+                Тип считается из названия 1С (скобки с кодами, «набор/комплект/в сборе»).
+                У детали сборки — иконка связи 🔗 (наведи — куда входит; клик — она + все сборки).
+                Клик по строке сборки — сборка + её детали. Повторный клик или «Сбросить» снимает.</span>
+            </li>
           </ul>
         </div>
 
       </section>
 
-      
+      {# ═══ 2. Сборка и остаток ═══ #}
       <section class="mwd-screen" data-screen-panel="assembly">
-        <h3 class="mwd-h">Сборка товара и остаток</h3>
-        <div class="mwd-hint">
-          <strong>Подсказка:</strong> Вид 1С → выгрузить реестр сборок.
-          <button type="button" class="mwd-btn mwd-btn-sm" data-demo-toast>Загрузить реестр</button>
+        <div class="mwd-h-row">
+          <h3 class="mwd-h">Сборка и остаток</h3>
+          <span class="mwd-demo-badge">DEMO</span>
+        </div>
+        <p class="mwd-sub">Тип = роль (сборка / комплектующее) · Статус = остаток (для сборки / дефицит / ок) · клик по детали — все сборки с ней</p>
+
+        <div class="mwd-kpi" id="mwd-asm-kpi">
+          <div class="mwd-kpi-card">
+            <div class="mwd-kpi-label">Позиций в сборках</div>
+            <div class="mwd-kpi-val" id="mwd-asm-kpi-pos">10</div>
+          </div>
+          <div class="mwd-kpi-card">
+            <div class="mwd-kpi-label">Позиций с дефицитом</div>
+            <div class="mwd-kpi-val mwd-neg" id="mwd-asm-kpi-def">4</div>
+          </div>
+          <div class="mwd-kpi-card">
+            <div class="mwd-kpi-label">Остаток, шт</div>
+            <div class="mwd-kpi-val" id="mwd-asm-kpi-stock">600</div>
+          </div>
+          <div class="mwd-kpi-card is-accent">
+            <div class="mwd-kpi-label">Хранение, ₽</div>
+            <div class="mwd-kpi-val" id="mwd-asm-kpi-money">110 786</div>
+          </div>
         </div>
 
-        <h4 class="mwd-block-title">Товар в сборках и остаток</h4>
-        <div class="mwd-table-wrap">
-          <table class="mwd-table">
+        <div class="mwd-filters" id="mwd-asm-filters">
+          <label class="mwd-field">
+            <span>Статус</span>
+            <select id="mwd-asm-status">
+              <option value="">Все</option>
+              <option value="assembly">для сборки</option>
+              <option value="deficit">дефицит</option>
+              <option value="ok">ок</option>
+            </select>
+          </label>
+          <label class="mwd-field">
+            <span>Тип</span>
+            <select id="mwd-asm-mode">
+              <option value="">Все</option>
+              <option value="kit">готовые сборки</option>
+              <option value="donor">комплектующие</option>
+            </select>
+          </label>
+          <label class="mwd-field">
+            <span>Склад</span>
+            <input type="text" value="РЦ" disabled>
+          </label>
+          <label class="mwd-field">
+            <span>Дата среза</span>
+            <input type="text" value="21.08.2026 09:40" readonly>
+          </label>
+          <label class="mwd-field mwd-field-grow">
+            <span>Поиск по артикулу / названию</span>
+            <input type="search" name="mwd_asm_search" placeholder="например 88010 или граббер" id="mwd-asm-search" autocomplete="off" value="">
+          </label>
+        </div>
+
+        <div class="mwd-sa-asm-filter" id="mwd-asm-link-filter" hidden>
+          <div class="mwd-sa-asm-filter-body">
+            <strong id="mwd-asm-link-filter-title">Сборки с этим товаром</strong>
+            <span id="mwd-asm-link-filter-text"></span>
+          </div>
+          <button type="button" class="mwd-btn" id="mwd-asm-link-filter-clear" title="Показать все позиции снова">Сбросить фильтр</button>
+        </div>
+
+        <div class="mwd-table-wrap" id="mwd-asm-wrap">
+          <table class="mwd-table mwd-asm-table" id="mwd-asm-table">
             <thead>
               <tr>
-                <th>Статус</th>
                 <th>Артикул</th>
                 <th>Наименование</th>
-                <th class="num">В сборках, шт</th>
-                <th class="num">Остаток РЦ, шт</th>
-                <th class="num">Разница</th>
-                <th class="num">Сумма, ₽</th>
+                <th class="num" title="Сколько штук этого артикула сейчас числится в сборках">В сборках<br>шт</th>
+                <th class="num" title="Остаток на складе РЦ на дату среза">Остаток РЦ<br>шт</th>
+                <th class="num" title="Остаток − в сборках (готовая сборка) или остаток − потребность (комплектующее)">Разница</th>
+                <th class="num" title="Закупочная / учётная цена (мок)">Цена<br>₽</th>
+                <th class="num" title="Сумма = остаток на РЦ × цена. Это «хранение в сумме».">Сумма<br>₽</th>
+                <th>Статус</th>
+              </tr>
+              <tr class="mwd-asm-totals-row">
+                <th>Итого</th>
+                <th></th>
+                <th class="num" id="mwd-asm-tot-in">670</th>
+                <th class="num" id="mwd-asm-tot-stock">600</th>
+                <th></th>
+                <th></th>
+                <th class="num" id="mwd-asm-tot-money" title="Сумма = остаток на РЦ × цена. Источник в проде: 1С + закуп; в демо — моки.">110 786</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
-                <td class="mwd-art">91044</td>
-                <td>Кошелёк женский экокожа чёрный</td>
+              {# —— Готовые сборки: состав читается из скобок в названии —— #}
+              <tr class="mwd-asm-row" data-art="88010" data-kind="kit" data-owner="olga" data-in-asm="100" data-stock="108" data-price="284" data-deficit="0" data-status="assembly">
+                <td class="mwd-art">88010</td>
+                <td class="mwd-asm-name">Пример набор (кошелёк) (91044+91045)</td>
                 <td class="num">100</td>
-                <td class="num">112</td>
-                <td class="num">+12</td>
-                <td class="num">28 400</td>
-              </tr>
-              <tr>
+                <td class="num">108</td>
+                <td class="num" title="Разница = остаток на РЦ − в сборках → 108 − 100">+8</td>
+                <td class="num">284</td>
+                <td class="num">30 672</td>
                 <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
-                <td class="mwd-art">55110</td>
-                <td>Граббер для мусора телескопический</td>
+              </tr>
+              <tr class="mwd-asm-row" data-art="55120" data-kind="kit" data-owner="olga" data-in-asm="50" data-stock="69" data-price="185" data-deficit="0" data-status="assembly">
+                <td class="mwd-art">55120</td>
+                <td class="mwd-asm-name">Граббер для мусора набор (953382+880440)</td>
                 <td class="num">50</td>
                 <td class="num">69</td>
-                <td class="num">+19</td>
-                <td class="num">12 650</td>
+                <td class="num" title="Разница = остаток на РЦ − в сборках → 69 − 50">+19</td>
+                <td class="num">185</td>
+                <td class="num">12 765</td>
+                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
               </tr>
-              <tr>
-                <td><span class="mwd-st mwd-st-out">выводим</span></td>
-                <td class="mwd-art">66201</td>
-                <td>Бампер силиконовый iPhone 13</td>
+              <tr class="mwd-asm-row" data-art="711204" data-kind="kit" data-owner="olga" data-in-asm="50" data-stock="61" data-price="210" data-deficit="0" data-status="assembly">
+                <td class="mwd-art">711204</td>
+                <td class="mwd-asm-name">ГРАБЛИ веерные с черенком в сборе (730640+880440)</td>
                 <td class="num">50</td>
-                <td class="num">18</td>
-                <td class="num mwd-neg">−32</td>
-                <td class="num">3 240</td>
-              </tr>
-              <tr>
-                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
-                <td class="mwd-art">650975</td>
-                <td>Батарейка AAA 4 шт blister</td>
-                <td class="num">0</td>
-                <td class="num">332</td>
-                <td class="num">+332</td>
-                <td class="num">14 940</td>
-              </tr>
-              <tr>
+                <td class="num">61</td>
+                <td class="num" title="Разница = остаток на РЦ − в сборках → 61 − 50">+11</td>
+                <td class="num">210</td>
+                <td class="num">12 810</td>
                 <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
-                <td class="mwd-art">77012</td>
-                <td>Набор резинок для волос 20 шт</td>
-                <td class="num">80</td>
-                <td class="num">95</td>
-                <td class="num">+15</td>
-                <td class="num">4 750</td>
               </tr>
-              <tr>
-                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
-                <td class="mwd-art">120569</td>
-                <td>Дневник школьный «Космос» 48 л</td>
-                <td class="num">0</td>
-                <td class="num">164</td>
-                <td class="num">+164</td>
-                <td class="num">23 780</td>
+              <tr class="mwd-asm-row is-deficit" data-art="55130" data-kind="kit" data-owner="irina" data-in-asm="50" data-stock="22" data-price="210" data-deficit="1" data-status="deficit">
+                <td class="mwd-art">55130</td>
+                <td class="mwd-asm-name">Талингер захват телескопический набор</td>
+                <td class="num">50</td>
+                <td class="num">22</td>
+                <td class="num mwd-neg" title="Разница = остаток на РЦ − в сборках → 22 − 50">−28</td>
+                <td class="num">210</td>
+                <td class="num">4 620</td>
+                <td><span class="mwd-st mwd-st-deficit">дефицит</span></td>
               </tr>
-              <tr>
-                <td><span class="mwd-st mwd-st-out">выводим</span></td>
-                <td class="mwd-art">372539</td>
-                <td>Брошь «День Победы»</td>
-                <td class="num">20</td>
-                <td class="num">128</td>
-                <td class="num">+108</td>
-                <td class="num">6 400</td>
-              </tr>
-              <tr>
+              <tr class="mwd-asm-row" data-art="66210" data-kind="kit" data-owner="olga" data-in-asm="30" data-stock="31" data-price="390" data-deficit="0" data-status="assembly">
+                <td class="mwd-art">66210</td>
+                <td class="mwd-asm-name">Бампер + плёнка (сборка) (66201+66202)</td>
+                <td class="num">30</td>
+                <td class="num">31</td>
+                <td class="num" title="Разница = остаток на РЦ − в сборках → 31 − 30">+1</td>
+                <td class="num">390</td>
+                <td class="num">12 090</td>
                 <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
+              </tr>
+              <tr class="mwd-asm-row" data-art="44102" data-kind="kit" data-owner="irina" data-in-asm="30" data-stock="59" data-price="195" data-deficit="0" data-status="ok">
                 <td class="mwd-art">44102</td>
-                <td>Набор контейнеров 3 шт</td>
+                <td class="mwd-asm-name">Набор контейнеров 3 шт</td>
                 <td class="num">30</td>
                 <td class="num">59</td>
-                <td class="num">+29</td>
+                <td class="num" title="Разница = остаток на РЦ − в сборках → 59 − 30">+29</td>
+                <td class="num">195</td>
                 <td class="num">11 505</td>
+                <td><span class="mwd-st mwd-st-ok">ок</span></td>
+              </tr>
+
+              {# —— Комплектующие: обычные имена; роль = «упомянуты в скобках комплекта» —— #}
+              <tr class="mwd-asm-row" data-art="91044" data-kind="donor" data-owner="olga" data-in-asm="100" data-stock="112" data-price="254" data-deficit="0" data-status="ok">
+                <td class="mwd-art">91044</td>
+                <td class="mwd-asm-name">Кошелёк женский экокожа чёрный</td>
+                <td class="num">100</td>
+                <td class="num">112</td>
+                <td class="num" title="Разница = остаток на РЦ − потребность в сборках → 112 − 100">+12</td>
+                <td class="num">254</td>
+                <td class="num">28 448</td>
+                <td><span class="mwd-st mwd-st-ok">ок</span></td>
+              </tr>
+              <tr class="mwd-asm-row is-deficit" data-art="91045" data-kind="donor" data-owner="olga" data-in-asm="100" data-stock="40" data-price="18" data-deficit="1" data-status="deficit">
+                <td class="mwd-art">91045</td>
+                <td class="mwd-asm-name">Вкладыш-карта для кошелька</td>
+                <td class="num">100</td>
+                <td class="num">40</td>
+                <td class="num mwd-neg" title="Разница = остаток на РЦ − потребность в сборках → 40 − 100">−60</td>
+                <td class="num">18</td>
+                <td class="num">720</td>
+                <td><span class="mwd-st mwd-st-deficit">дефицит</span></td>
+              </tr>
+              <tr class="mwd-asm-row is-deficit" data-art="953382" data-kind="donor" data-owner="irina" data-in-asm="80" data-stock="45" data-price="62" data-deficit="1" data-status="deficit">
+                <td class="mwd-art">953382</td>
+                <td class="mwd-asm-name">Насадка круглая для швабры 250гр</td>
+                <td class="num">80</td>
+                <td class="num">45</td>
+                <td class="num mwd-neg" title="Разница = остаток на РЦ − потребность в сборках → 45 − 80">−35</td>
+                <td class="num">62</td>
+                <td class="num">2 790</td>
+                <td><span class="mwd-st mwd-st-deficit">дефицит</span></td>
+              </tr>
+              <tr class="mwd-asm-row is-deficit" data-art="880440" data-kind="donor" data-owner="irina" data-in-asm="100" data-stock="96" data-price="41" data-deficit="1" data-status="deficit">
+                <td class="mwd-art">880440</td>
+                <td class="mwd-asm-name">Черенок дерев. 120см с резьбой</td>
+                <td class="num">100</td>
+                <td class="num">96</td>
+                <td class="num mwd-neg" title="Разница = остаток на РЦ − потребность в сборках → 96 − 100">−4</td>
+                <td class="num">41</td>
+                <td class="num">3 936</td>
+                <td><span class="mwd-st mwd-st-deficit">дефицит</span></td>
+              </tr>
+              <tr class="mwd-asm-row is-deficit" data-art="66201" data-kind="donor" data-owner="olga" data-in-asm="50" data-stock="18" data-price="180" data-deficit="1" data-status="deficit">
+                <td class="mwd-art">66201</td>
+                <td class="mwd-asm-name">Бампер силиконовый iPhone 13</td>
+                <td class="num">50</td>
+                <td class="num">18</td>
+                <td class="num mwd-neg" title="Разница = остаток на РЦ − потребность в сборках → 18 − 50">−32</td>
+                <td class="num">180</td>
+                <td class="num">3 240</td>
+                <td><span class="mwd-st mwd-st-deficit">дефицит</span></td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        <div class="mwd-totals">
-          <div>
-            Итого остаток РЦ:
-            <strong>977 шт</strong>
-          </div>
-          <div>
-            Разница (остаток − сборки):
-            <strong>+647 шт</strong>
-          </div>
-          <div>
-            Сумма остатка:
-            <strong>105 665 ₽</strong>
-          </div>
-        </div>
       </section>
 
-      
+      {# ═══ 3. Анализ закупки ═══ #}
       <section class="mwd-screen" data-screen-panel="purchase">
         <h3 class="mwd-h">Анализ закупки товара</h3>
-        <p class="mwd-sub">Монитор товароведа · источник: выгрузки 1С (ведомость, остатки, закуп) — в демо статично</p>
 
         <div class="mwd-kpi">
           <div class="mwd-kpi-card">
             <div class="mwd-kpi-label">SKU в работе</div>
-            <div class="mwd-kpi-val">48</div>
+            <div class="mwd-kpi-val">10</div>
           </div>
           <div class="mwd-kpi-card">
             <div class="mwd-kpi-label">К заказу сегодня</div>
             <div class="mwd-kpi-val">7</div>
           </div>
           <div class="mwd-kpi-card">
-            <div class="mwd-kpi-label">Сумма заказа</div>
-            <div class="mwd-kpi-val">186 400 ₽</div>
+            <div class="mwd-kpi-label">Сумма закупа</div>
+            <div class="mwd-kpi-val">89 650 ₽</div>
           </div>
           <div class="mwd-kpi-card">
-            <div class="mwd-kpi-label">Излишки</div>
-            <div class="mwd-kpi-val">12</div>
+            <div class="mwd-kpi-label">Неходовой</div>
+            <div class="mwd-kpi-val">2</div>
           </div>
         </div>
 
@@ -636,180 +754,231 @@
             <span>Статус</span>
             <select id="mwd-purchase-status">
               <option value="">Все</option>
-              <option value="выводим">выводим</option>
-              <option value="для сборки">для сборки</option>
-              <option value="передано">передано</option>
-              <option value="актуально">актуально</option>
+              <option value="планируем">планируем</option>
+              <option value="в наличии">в наличии</option>
+              <option value="в пути">в пути</option>
+              <option value="неходовой">неходовой товар</option>
             </select>
           </label>
-          <button type="button" class="mwd-btn" data-demo-toast>Сформировать заказ</button>
+          <label class="mwd-field">
+            <span>Тип</span>
+            <select id="mwd-purchase-mode">
+              <option value="">Все</option>
+              <option value="kit">готовые сборки</option>
+              <option value="donor">комплектующие</option>
+            </select>
+          </label>
+          <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-purchase-preorder">Сформировать предзаказ и распечатать</button>
         </div>
+
+        <div class="mwd-sa-asm-filter" id="mwd-pur-link-filter" hidden>
+          <div class="mwd-sa-asm-filter-body">
+            <strong id="mwd-pur-link-filter-title">Сборки с этим товаром</strong>
+            <span id="mwd-pur-link-filter-text"></span>
+          </div>
+          <button type="button" class="mwd-btn" id="mwd-pur-link-filter-clear" title="Показать все позиции снова">Сбросить фильтр</button>
+        </div>
+
+        <p class="mwd-sub" style="margin-top:0">Статус закупки ≠ тип сборки · клик по комплектующей — связанные сборки</p>
 
         <div class="mwd-table-wrap">
-          <table class="mwd-table" id="mwd-purchase-table">
-            <thead>
-              <tr>
-                <th>Статус</th>
-                <th>Артикул 1С</th>
-                <th>Номенклатура</th>
-                <th>Поставщик</th>
-                <th class="num">Передачи 30 дн</th>
-                <th class="num">Передачи 7 дн</th>
-                <th class="num">Доступно</th>
-                <th class="num">Излишек &gt;1 мес</th>
-                <th class="num">Оборачиваемость</th>
-                <th class="num">Цена закупки</th>
-                <th class="num">Заказать, шт</th>
-                <th class="num">Сумма заказа</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr data-status="актуально">
-                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
-                <td class="mwd-art">650975</td>
-                <td>Батарейка AAA 4 шт blister</td>
-                <td>ООО «Энергопак»</td>
-                <td class="num">388</td>
-                <td class="num">120</td>
-                <td class="num">332</td>
-                <td class="num">0</td>
-                <td class="num">18 дн</td>
-                <td class="num">45 ₽</td>
-                <td class="num">200</td>
-                <td class="num">9 000 ₽</td>
-              </tr>
-              <tr data-status="для сборки">
-                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
-                <td class="mwd-art">91044</td>
-                <td>Кошелёк женский экокожа чёрный</td>
-                <td>ИП Смирнова</td>
-                <td class="num">48</td>
-                <td class="num">48</td>
-                <td class="num">112</td>
-                <td class="num">0</td>
-                <td class="num">42 дн</td>
-                <td class="num">254 ₽</td>
-                <td class="num">100</td>
-                <td class="num">25 400 ₽</td>
-              </tr>
-              <tr data-status="для сборки">
-                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
-                <td class="mwd-art">55110</td>
-                <td>Граббер для мусора телескопический</td>
-                <td>ООО «ХозТорг»</td>
-                <td class="num">61</td>
-                <td class="num">30</td>
-                <td class="num">69</td>
-                <td class="num">0</td>
-                <td class="num">25 дн</td>
-                <td class="num">183 ₽</td>
-                <td class="num">50</td>
-                <td class="num">9 150 ₽</td>
-              </tr>
-              <tr data-status="выводим">
-                <td><span class="mwd-st mwd-st-out">выводим</span></td>
-                <td class="mwd-art">66201</td>
-                <td>Бампер силиконовый iPhone 13</td>
-                <td>—</td>
-                <td class="num">5</td>
-                <td class="num">0</td>
-                <td class="num">18</td>
-                <td class="num">18</td>
-                <td class="num">120 дн</td>
-                <td class="num">180 ₽</td>
-                <td class="num">—</td>
-                <td class="num mwd-muted">нет заказа</td>
-              </tr>
-              <tr data-status="актуально">
-                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
-                <td class="mwd-art">730077</td>
-                <td>Мешок для мусора 60л 20шт</td>
-                <td>ООО «ПакЛин»</td>
-                <td class="num">210</td>
-                <td class="num">100</td>
-                <td class="num">200</td>
-                <td class="num">0</td>
-                <td class="num">22 дн</td>
-                <td class="num">42 ₽</td>
-                <td class="num">300</td>
-                <td class="num">12 600 ₽</td>
-              </tr>
-              <tr data-status="передано">
-                <td><span class="mwd-st mwd-st-sent">передано</span></td>
-                <td class="mwd-art">120569</td>
-                <td>Дневник школьный «Космос» 48 л</td>
-                <td>ООО «КанцОпт»</td>
-                <td class="num">156</td>
-                <td class="num">49</td>
-                <td class="num">164</td>
-                <td class="num">0</td>
-                <td class="num">28 дн</td>
-                <td class="num">78 ₽</td>
-                <td class="num">150</td>
-                <td class="num">11 700 ₽</td>
-              </tr>
-              <tr data-status="актуально">
-                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
-                <td class="mwd-art">2204</td>
-                <td>Тряпка из микрофибры</td>
-                <td>ООО «ТекстильПро»</td>
-                <td class="num">455</td>
-                <td class="num">120</td>
-                <td class="num">345</td>
-                <td class="num">40</td>
-                <td class="num">15 дн</td>
-                <td class="num">22 ₽</td>
-                <td class="num">500</td>
-                <td class="num">11 000 ₽</td>
-              </tr>
-              <tr data-status="выводим">
-                <td><span class="mwd-st mwd-st-out">выводим</span></td>
-                <td class="mwd-art">372539</td>
-                <td>Брошь «День Победы»</td>
-                <td>—</td>
-                <td class="num">22</td>
-                <td class="num">0</td>
-                <td class="num">128</td>
-                <td class="num">100</td>
-                <td class="num">95 дн</td>
-                <td class="num">50 ₽</td>
-                <td class="num">—</td>
-                <td class="num mwd-muted">нет заказа</td>
-              </tr>
-              <tr data-status="для сборки">
-                <td><span class="mwd-st mwd-st-assembly">для сборки</span></td>
-                <td class="mwd-art">66201-KIT</td>
-                <td>Бампер + плёнка (сборка)</td>
-                <td>ООО «Аксессуар»</td>
-                <td class="num">40</td>
-                <td class="num">15</td>
-                <td class="num">8</td>
-                <td class="num">0</td>
-                <td class="num">12 дн</td>
-                <td class="num">210 ₽</td>
-                <td class="num">80</td>
-                <td class="num">16 800 ₽</td>
-              </tr>
-              <tr data-status="актуально">
-                <td><span class="mwd-st mwd-st-ok">актуально</span></td>
-                <td class="mwd-art">8801</td>
-                <td>Ведро пластиковое 10л</td>
-                <td>ООО «ХозТорг»</td>
-                <td class="num">38</td>
-                <td class="num">12</td>
-                <td class="num">67</td>
-                <td class="num">0</td>
-                <td class="num">35 дн</td>
-                <td class="num">95 ₽</td>
-                <td class="num">60</td>
-                <td class="num">5 700 ₽</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            <table class="mwd-table" id="mwd-purchase-table">
+              <thead>
+                <tr>
+                  <th title="Артикул из 1С, не артикул карточки Ozon/WB">Артикул</th>
+                  <th>Наименование</th>
+                  <th class="num" title="Можно отгрузить сейчас (остаток минус резерв). Из отчёта «Остатки и доступность».">Доступно</th>
+                  <th class="num mwd-th-2" title="Сколько лежит на складе сейчас, включая резерв. Из отчёта «Остатки и доступность».">Текущий<br>остаток</th>
+                  <th class="num mwd-th-2" title="Продажи за последние 7 дней. Из отчёта «Обороты товаров на складах».">Продажи<br>7 дн</th>
+                  <th class="num mwd-th-2">Продажи<br>14 дн</th>
+                  <th class="num mwd-th-2">Продажи<br>60 дн</th>
+                  <th class="num mwd-th-2">Продажи<br>360 дн</th>
+                  <th class="num mwd-th-2" title="Продажи того же месяца год назад + 20%, минус доступно. Сейчас: август 2025 × 1,2 − доступно. Если остатка хватает — 0.">Ещё заказать<br>мес+20%</th>
+                  <th class="num mwd-th-2" title="Автозаказ: продажи за 360 дней ÷ 12 (среднемесячные), минус доступно. Формулу в ТЗ товаровед пометил «???» — так и показываем, пока не уточнят.">Автозаказ<br>год/12</th>
+                  <th class="num mwd-th-2" title="Цена за 1 шт по последнему приходу.">Цена за 1 шт<br>посл. приход</th>
+                  <th class="num mwd-th-2">Кол-во<br>заказать сегодня</th>
+                  <th class="num">Сумма закупа</th>
+                  <th title="Клик — карточка поставщика и история заказов">Поставщик</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="mwd-pur-row" data-art="650975" data-status="в наличии">
+                  <td class="mwd-art">650975</td>
+                  <td class="mwd-pur-name">Батарейка AAA 4 шт blister</td>
+                  <td class="num">332</td>
+                  <td class="num">340</td>
+                  <td class="num">120</td>
+                  <td class="num">210</td>
+                  <td class="num">520</td>
+                  <td class="num">3 880</td>
+                  <td class="num" title="Авг 2025: 440 шт × 1,2 = 528 − 332 = 196">196</td>
+                  <td class="num" title="3880 / 12 = 323 − 332 = 0">0</td>
+                  <td class="num">45 ₽</td>
+                  <td class="num">200</td>
+                  <td class="num">9 000 ₽</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="energo" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ООО «Энергопак»</span></button></td>
+                  <td><span class="mwd-st mwd-st-ok">в наличии</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="91044" data-status="планируем">
+                  <td class="mwd-art">91044</td>
+                  <td class="mwd-pur-name">Кошелёк женский экокожа чёрный</td>
+                  <td class="num">112</td>
+                  <td class="num">118</td>
+                  <td class="num">48</td>
+                  <td class="num">62</td>
+                  <td class="num">95</td>
+                  <td class="num">580</td>
+                  <td class="num" title="Авг 2025: 180 × 1,2 = 216 − 112 = 104">104</td>
+                  <td class="num" title="580 / 12 = 48 − 112 = 0">0</td>
+                  <td class="num">254 ₽</td>
+                  <td class="num">100</td>
+                  <td class="num">25 400 ₽</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="smirnova" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ИП Смирнова</span></button></td>
+                  <td><span class="mwd-st mwd-st-plan">планируем</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="55120" data-status="планируем">
+                  <td class="mwd-art">55120</td>
+                  <td class="mwd-pur-name">Граббер для мусора набор (953382+880440)</td>
+                  <td class="num">69</td>
+                  <td class="num">75</td>
+                  <td class="num">30</td>
+                  <td class="num">48</td>
+                  <td class="num">90</td>
+                  <td class="num">720</td>
+                  <td class="num" title="Авг 2025: 100 × 1,2 = 120 − 69 = 51">51</td>
+                  <td class="num" title="720 / 12 = 60 − 69 = 0">0</td>
+                  <td class="num">183 ₽</td>
+                  <td class="num">50</td>
+                  <td class="num">9 150 ₽</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="hoztorg" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ООО «ХозТорг»</span></button></td>
+                  <td><span class="mwd-st mwd-st-plan">планируем</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="66201" data-status="неходовой">
+                  <td class="mwd-art">66201</td>
+                  <td class="mwd-pur-name">Бампер силиконовый iPhone 13</td>
+                  <td class="num">18</td>
+                  <td class="num">18</td>
+                  <td class="num">0</td>
+                  <td class="num">1</td>
+                  <td class="num">5</td>
+                  <td class="num">22</td>
+                  <td class="num" title="Авг 2025: 8 × 1,2 = 10 − 18 = 0">0</td>
+                  <td class="num" title="22 / 12 = 2 − 18 = 0">0</td>
+                  <td class="num">180 ₽</td>
+                  <td class="num">—</td>
+                  <td class="num mwd-muted">нет заказа</td>
+                  <td>—</td>
+                  <td><span class="mwd-st mwd-st-out">неходовой товар</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="730077" data-status="в наличии">
+                  <td class="mwd-art">730077</td>
+                  <td class="mwd-pur-name">Мешок для мусора 60л 20шт</td>
+                  <td class="num">200</td>
+                  <td class="num">215</td>
+                  <td class="num">100</td>
+                  <td class="num">168</td>
+                  <td class="num">420</td>
+                  <td class="num">2 520</td>
+                  <td class="num" title="Авг 2025: 400 × 1,2 = 480 − 200 = 280">280</td>
+                  <td class="num" title="2520 / 12 = 210 − 200 = 10">10</td>
+                  <td class="num">42 ₽</td>
+                  <td class="num">300</td>
+                  <td class="num">12 600 ₽</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="paklin" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ООО «ПакЛин»</span></button></td>
+                  <td><span class="mwd-st mwd-st-ok">в наличии</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="711204" data-status="в пути">
+                  <td class="mwd-art">711204</td>
+                  <td class="mwd-pur-name">ГРАБЛИ веерные с черенком в сборе (730640+880440)</td>
+                  <td class="num">164</td>
+                  <td class="num">164</td>
+                  <td class="num">49</td>
+                  <td class="num">90</td>
+                  <td class="num">200</td>
+                  <td class="num">1 560</td>
+                  <td class="num" title="Авг 2025: 280 × 1,2 = 336 − 164 = 172">172</td>
+                  <td class="num" title="1560 / 12 = 130 − 164 = 0">0</td>
+                  <td class="num">78 ₽</td>
+                  <td class="num">—</td>
+                  <td class="num mwd-muted">уже в пути</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="kanc" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ООО «КанцОпт»</span></button></td>
+                  <td><span class="mwd-st mwd-st-sent">в пути</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="880440" data-status="в наличии">
+                  <td class="mwd-art">880440</td>
+                  <td class="mwd-pur-name">Черенок дерев. 120см с резьбой</td>
+                  <td class="num">345</td>
+                  <td class="num">385</td>
+                  <td class="num">120</td>
+                  <td class="num">210</td>
+                  <td class="num">580</td>
+                  <td class="num">5 460</td>
+                  <td class="num" title="Авг 2025: 700 × 1,2 = 840 − 345 = 495">495</td>
+                  <td class="num" title="5460 / 12 = 455 − 345 = 110">110</td>
+                  <td class="num">22 ₽</td>
+                  <td class="num">500</td>
+                  <td class="num">11 000 ₽</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="textil" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ООО «ТекстильПро»</span></button></td>
+                  <td><span class="mwd-st mwd-st-ok">в наличии</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="88010" data-status="неходовой">
+                  <td class="mwd-art">88010</td>
+                  <td class="mwd-pur-name">Пример набор (кошелёк) (91044+91045)</td>
+                  <td class="num">128</td>
+                  <td class="num">128</td>
+                  <td class="num">0</td>
+                  <td class="num">0</td>
+                  <td class="num">8</td>
+                  <td class="num">22</td>
+                  <td class="num" title="Авг 2025: 15 × 1,2 = 18 − 128 = 0">0</td>
+                  <td class="num" title="22 / 12 = 2 − 128 = 0">0</td>
+                  <td class="num">50 ₽</td>
+                  <td class="num">—</td>
+                  <td class="num mwd-muted">нет заказа</td>
+                  <td>—</td>
+                  <td><span class="mwd-st mwd-st-out">неходовой товар</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="66210" data-status="планируем">
+                  <td class="mwd-art">66210</td>
+                  <td class="mwd-pur-name">Бампер + плёнка (сборка) (66201+66202)</td>
+                  <td class="num">8</td>
+                  <td class="num">10</td>
+                  <td class="num">15</td>
+                  <td class="num">28</td>
+                  <td class="num">70</td>
+                  <td class="num">480</td>
+                  <td class="num" title="Авг 2025: 80 × 1,2 = 96 − 8 = 88">88</td>
+                  <td class="num" title="480 / 12 = 40 − 8 = 32">32</td>
+                  <td class="num">210 ₽</td>
+                  <td class="num">80</td>
+                  <td class="num">16 800 ₽</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="accessory" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ООО «Аксессуар»</span></button></td>
+                  <td><span class="mwd-st mwd-st-plan">планируем</span></td>
+                </tr>
+                <tr class="mwd-pur-row" data-art="8801" data-status="в наличии">
+                  <td class="mwd-art">8801</td>
+                  <td class="mwd-pur-name">Ведро пластиковое 10л</td>
+                  <td class="num">67</td>
+                  <td class="num">72</td>
+                  <td class="num">12</td>
+                  <td class="num">22</td>
+                  <td class="num">55</td>
+                  <td class="num">456</td>
+                  <td class="num" title="Авг 2025: 90 × 1,2 = 108 − 67 = 41">41</td>
+                  <td class="num" title="456 / 12 = 38 − 67 = 0">0</td>
+                  <td class="num">95 ₽</td>
+                  <td class="num">60</td>
+                  <td class="num">5 700 ₽</td>
+                  <td><button type="button" class="mwd-sup-link" data-supplier="hoztorg" title="Карточка поставщика"><svg class="mwd-sup-ico" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 13.5V4.2A1.2 1.2 0 0 1 3.7 3h8.6a1.2 1.2 0 0 1 1.2 1.2v9.3M2.5 13.5h11M5 6.2h6M5 8.7h6M5 11.2h3.5"/></svg><span class="mwd-sup-name">ООО «ХозТорг»</span></button></td>
+                  <td><span class="mwd-st mwd-st-ok">в наличии</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
       </section>
 
-      
+      {# ═══ 4. Паспорт / карточки / архив ═══ #}
       <section class="mwd-screen" data-screen-panel="passport">
         <h3 class="mwd-h">Паспорт / карточки / архив</h3>
 
@@ -820,7 +989,7 @@
           <button type="button" class="mwd-subtab" data-sub="archive">Карточки в архив</button>
         </div>
 
-        
+        {# ─── 4.0 Ведомость ─── #}
         <div class="mwd-subpanel is-active" data-sub-panel="vedomost">
           <div class="mwd-ved-bar" id="mwd-ved-bar">
             <label class="mwd-ved-field mwd-ved-field-search">
@@ -1036,12 +1205,12 @@
           <p class="mwd-footnote">Источник: выгрузка 1С (остатки/номенклатура) — демо</p>
         </div>
 
-        
+        {# ─── 4.1 Паспорт ─── #}
         <div class="mwd-subpanel" data-sub-panel="pass">
           <div class="mwd-mode-toggle">
             <button type="button" class="mwd-chip is-active" data-pass-mode="new">Новый товар</button>
             <button type="button" class="mwd-chip" data-pass-mode="edit">Редакция старого</button>
-            <p class="mwd-sub" id="mwd-pass-context">Поля пустые · отметьте товары в ведомости и нажмите «Редактировать выбранные»</p>
+            <p class="mwd-sub" id="mwd-pass-context" hidden>Поля пустые · отметьте товары в ведомости и нажмите «Редактировать выбранные»</p>
           </div>
 
           <div class="mwd-pass-queue" id="mwd-pass-queue" hidden>
@@ -1051,6 +1220,10 @@
           <div class="mwd-pass-innertabs" id="mwd-pass-innertabs" role="tablist" aria-label="Разделы паспорта">
             <button type="button" class="mwd-pass-innertab is-active" data-pass-tab="main" role="tab" aria-selected="true">
               📎 Главное и Документы
+              <span class="mwd-pass-tab-miss" data-pass-tab-miss hidden></span>
+            </button>
+            <button type="button" class="mwd-pass-innertab" data-pass-tab="names" role="tab" aria-selected="false">
+              🔤 Названия для кабинетов
               <span class="mwd-pass-tab-miss" data-pass-tab-miss hidden></span>
             </button>
             <button type="button" class="mwd-pass-innertab" data-pass-tab="logistics" role="tab" aria-selected="false">
@@ -1069,7 +1242,7 @@
 
           <form class="mwd-passport" id="mwd-passport-form" autocomplete="off" onsubmit="return false;">
 
-            
+            {# —— Вкладка 1: Главное и Документы —— #}
             <div class="mwd-pass-tabpanel is-active" data-pass-tab-panel="main" role="tabpanel">
               <div class="mwd-pass-main-layout">
                 <div class="mwd-pass-main-left">
@@ -1221,7 +1394,38 @@
               </div>
             </div>
 
-            
+            {# —— Вкладка 2: Названия для кабинетов —— #}
+            <div class="mwd-pass-tabpanel" data-pass-tab-panel="names" role="tabpanel" hidden>
+              <fieldset class="mwd-pass-sec mwd-pass-names">
+                <legend>Названия для кабинетов</legend>
+                <p class="mwd-sub">Сократите имя (не больше 40 символов) — ниже готовые названия с префиксом кабинета. Кнопка копирует авто-имя.</p>
+                <div class="mwd-name-calc">
+                  <label class="mwd-field">
+                    <span>Полное название <span class="mwd-len" id="mwd-pass-full-len">0</span></span>
+                    <div class="mwd-name-readonly" id="mwd-pass-full-name" aria-live="polite">—</div>
+                  </label>
+                  <label class="mwd-field">
+                    <span>Сокращённое название <span class="mwd-len" id="mwd-pass-short-len">0 / 40</span></span>
+                    <input type="text" name="short_base" data-pass-field="short_base" id="mwd-pass-short" autocomplete="off" placeholder="Сокращение для кабинетов">
+                  </label>
+                </div>
+                <div class="mwd-table-wrap">
+                  <table class="mwd-table mwd-names-table">
+                    <thead>
+                      <tr>
+                        <th>Кабинет</th>
+                        <th>Авто-имя</th>
+                        <th class="num">Len</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="mwd-pass-names-tbody"></tbody>
+                  </table>
+                </div>
+              </fieldset>
+            </div>
+
+            {# —— Вкладка 3: Логистика и Габариты (только техника) —— #}
             <div class="mwd-pass-tabpanel" data-pass-tab-panel="logistics" role="tabpanel" hidden>
               <div class="mwd-dims-pair">
                 <fieldset class="mwd-pass-sec mwd-dims-card">
@@ -1319,7 +1523,7 @@
               </fieldset>
             </div>
 
-            
+            {# —— Вкладка 4: Контент и Маркетинг —— #}
             <div class="mwd-pass-tabpanel" data-pass-tab-panel="content" role="tabpanel" hidden>
               <fieldset class="mwd-pass-sec">
                 <legend>Тексты для карточек и менеджеров</legend>
@@ -1340,7 +1544,7 @@
               </fieldset>
             </div>
 
-            
+            {# —— Вкладка 5: Медиафайлы —— #}
             <div class="mwd-pass-tabpanel" data-pass-tab-panel="media" role="tabpanel" hidden>
               <fieldset class="mwd-pass-sec">
                 <legend>Загрузки фото / видео</legend>
@@ -1362,7 +1566,7 @@
                     <span class="mwd-media-slot-status" data-slot-status>+</span>
                   </button>
                 </div>
-                
+                {# скрытые поля для совместимости fillPassport #}
                 <div id="mwd-pass-photos" class="mwd-visually-hidden" aria-hidden="true">
                   <div class="mwd-photo-ph" data-legacy-photo="0">фото</div>
                 </div>
@@ -1381,7 +1585,7 @@
           </div>
         </div>
 
-        
+        {# ─── 4.2 Контроль карточек: матрица + задачи ─── #}
         <div class="mwd-subpanel" data-sub-panel="cards">
           <h4 class="mwd-block-title">Контроль заведения карточек менеджерами</h4>
 
@@ -1423,7 +1627,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  
+                  {# Озон: ГАА ЧМА ЧИА ООО · ВБ: ГАА ЧМА ЧИА ООО #}
                   <tr class="mwd-cards-row" data-art="401084" data-name="Мочалка овал">
                     <td class="mwd-art mwd-cards-sticky mwd-cards-s0">401084</td>
                     <td class="mwd-cards-sticky mwd-cards-s1">Мочалка овал</td>
@@ -1550,7 +1754,7 @@
                   </tr>
                 </thead>
                 <tbody id="mwd-cards-tasks-tbody">
-                  
+                  {# Новые сверху (по убыванию даты) #}
                   <tr data-art="401084" data-cab="Озон ООО" data-reason="нет" data-date="2026-08-20">
                     <td>20.08.2026</td>
                     <td class="mwd-art">401084</td>
@@ -1597,7 +1801,7 @@
           </div>
         </div>
 
-        
+        {# ─── 4.3 Архив ─── #}
         <div class="mwd-subpanel" data-sub-panel="archive">
           <p class="mwd-sub">Статус ставится в ведомости: кнопка «Выбрать несколько» → галочки → «Карточки в архив». Здесь — сводка.</p>
           <div class="mwd-kanban" id="mwd-arch-kanban">
@@ -1617,7 +1821,7 @@
         </div>
       </section>
 
-      
+      {# ═══ 5. Проблемы с товаром ═══ #}
       <section class="mwd-screen" data-screen-panel="problems">
         <h3 class="mwd-h">Проблемы с товаром</h3>
         <p class="mwd-sub">Только UI · без реального workflow</p>
@@ -1721,8 +1925,13 @@
     </div>
     <p class="mwd-chart-cap" id="mwd-sa-chart-cap"></p>
     <div class="mwd-chart mwd-sa-chart">
-      <svg viewBox="0 0 680 280" role="img" aria-label="График: цена и остаток/шт по периоду" id="mwd-sa-chart-svg"></svg>
+      <svg viewBox="0 0 680 340" role="img" aria-label="График: цена, продажи и остаток по периоду" id="mwd-sa-chart-svg"></svg>
     </div>
+    <ul class="mwd-sa-chart-legend" aria-hidden="true">
+      <li><span class="mwd-sa-lg-swatch" style="background:#0f766e"></span>цена, ₽</li>
+      <li><span class="mwd-sa-lg-swatch" style="background:#c2410c"></span>продажи, шт</li>
+      <li><span class="mwd-sa-lg-swatch" style="background:#1d66d1"></span>остаток, шт</li>
+    </ul>
   </div>
 </div>
 
@@ -1735,19 +1944,15 @@
     <div class="mwd-modal-body">
       <label class="mwd-field">
         <span>Кабинет</span>
-        <select id="mwd-create-art-cabinet">
-          <option value="Озон ГАА" data-cab-kind="ip">Озон ГАА</option>
-          <option value="Озон ЧМА" data-cab-kind="ip">Озон ЧМА</option>
-          <option value="Озон ЧИА" data-cab-kind="ip">Озон ЧИА</option>
-          <option value="Озон ООО" data-cab-kind="ooo">Озон ООО</option>
-          <option value="ВБ ГАА" data-cab-kind="ip">ВБ ГАА</option>
-          <option value="ВБ ЧМА" data-cab-kind="ip">ВБ ЧМА</option>
-          <option value="ВБ ЧИА" data-cab-kind="ip">ВБ ЧИА</option>
-          <option value="ВБ ООО" data-cab-kind="ooo">ВБ ООО</option>
-        </select>
+        <select id="mwd-create-art-cabinet"></select>
+      </label>
+      <p class="mwd-create-art-hint" id="mwd-create-art-nds-hint" hidden></p>
+      <label class="mwd-field">
+        <span>Артикул продавца</span>
+        <input type="text" id="mwd-create-art-seller" value="" readonly>
       </label>
       <label class="mwd-field">
-        <span>Артикул продавца (превью)</span>
+        <span>Название для кабинета</span>
         <input type="text" id="mwd-create-art-preview" value="" readonly>
       </label>
       <label class="mwd-field">
@@ -1761,7 +1966,7 @@
   </div>
 </div>
 
-
+{# Модалка: задача менеджеру из матрицы «Контроль карточек» #}
 <div class="mwd-modal-overlay" id="mwd-cards-task-modal" hidden>
   <div class="mwd-modal mwd-modal-sm" role="dialog" aria-modal="true" aria-labelledby="mwd-cards-task-title">
     <div class="mwd-modal-head">
@@ -1801,31 +2006,39 @@
   </div>
 </div>
 
-<div class="mwd-toast" id="mwd-toast" hidden>демо</div>
-
-</div>
+<div class="mwd-modal-overlay" id="mwd-supplier-modal" hidden>
+  <div class="mwd-modal mwd-modal-supplier" role="dialog" aria-modal="true" aria-labelledby="mwd-supplier-title">
+    <div class="mwd-modal-head">
+      <h3 class="mwd-modal-title" id="mwd-supplier-title">Поставщик</h3>
+      <button type="button" class="mwd-modal-close" id="mwd-supplier-close" aria-label="Закрыть">×</button>
+    </div>
+    <div class="mwd-modal-body" id="mwd-supplier-card"></div>
   </div>
 </div>
-<script>
-(function () {
-  var layout = document.getElementById("app-layout");
-  var toggle = document.getElementById("sidebar-toggle");
-  if (!layout || !toggle) return;
-  var storageKey = "miroptstats_sidebar_collapsed_demo";
-  function applyState(collapsed) {
-    layout.classList.toggle("layout-sidebar-collapsed", collapsed);
-    document.documentElement.classList.toggle("sidebar-collapsed", collapsed);
-    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    toggle.textContent = collapsed ? "Показать меню" : "Скрыть меню";
-  }
-  applyState(localStorage.getItem(storageKey) === "1");
-  toggle.addEventListener("click", function () {
-    var next = !layout.classList.contains("layout-sidebar-collapsed");
-    applyState(next);
-    try { localStorage.setItem(storageKey, next ? "1" : "0"); } catch (e) {}
-  });
-})();
-</script>
-<script src="js/merchandiser_workflow_demo.js"></script>
+
+<div class="mwd-modal-overlay" id="mwd-preorder-modal" hidden>
+  <div class="mwd-modal mwd-modal-preorder" role="dialog" aria-modal="true" aria-labelledby="mwd-preorder-title">
+    <div class="mwd-modal-head mwd-no-print">
+      <h3 class="mwd-modal-title" id="mwd-preorder-title">Предзаказы поставщикам</h3>
+      <button type="button" class="mwd-modal-close" id="mwd-preorder-close" aria-label="Закрыть">×</button>
+    </div>
+    <div class="mwd-modal-body">
+      <p class="mwd-preorder-warn mwd-no-print">
+        Это не документ 1С. Печать и Excel — для склада и поставщика.
+        Приход в 1С заводят руками.
+      </p>
+      <div class="mwd-preorder-acts mwd-no-print">
+        <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-preorder-print">Печать</button>
+        <button type="button" class="mwd-btn" id="mwd-preorder-excel">Excel</button>
+      </div>
+      <div id="mwd-preorder-sheets"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mwd-toast" id="mwd-toast" hidden>демо</div>
+
+  </div>
+  <script src="js/merchandiser_workflow_demo.js"></script>
 </body>
 </html>

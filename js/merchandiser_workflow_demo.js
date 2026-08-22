@@ -67,6 +67,7 @@
       volume: "",
       pack_qty: "",
       nds: "",
+      short_base: "",
       docs: { cert: "нет", decl: "нет", refusal: "нет" },
       utp: "",
       pros: "",
@@ -312,7 +313,8 @@
   }
 
   root.querySelectorAll(".mwd-expandable").forEach(function (row) {
-    row.addEventListener("click", function () {
+    row.addEventListener("click", function (e) {
+      if (e.target.closest("button, a, input, select, textarea, label")) return;
       var open = !row.classList.contains("is-open");
       setExpandOpen(row, open);
       saveState({ expands: collectOpenExpands() });
@@ -330,10 +332,604 @@
   root.querySelectorAll("[data-demo-toast]").forEach(function (btn) {
     btn.addEventListener("click", function (e) {
       e.preventDefault();
+      e.stopPropagation();
       if (btn.disabled) return;
       showToast("демо");
     });
   });
+
+  // ── Комплект / комплектующая по названию 1С (без поля «донор») ──
+  // Как в marketplaces/nomenclature_assembly.py:
+  // «набор»/«комплект»/«сборка»/«в сборе», «А + Б», скобки (920099/921321).
+  var KIT_WORD_RE = /(?<!\w)(?:набор|комплект|сборк\w*|в\s+сборе)(?!\w)/i;
+  var PLUS_PAIR_RE = /[А-Яа-яA-Za-z]{3,}\s*\+\s*[А-Яа-яA-Za-z]{3,}/;
+  var CODE_LIST_PAREN_RE = /\(([^)]*\d{4,6}[^)]*)\)/g;
+  var CODE_RE = /(?<![A-Za-z0-9])(\d{4,6})(?!\d)/g;
+  var CODE_LIST_SHAPE_RE = /\d{4,6}\s*[+/]\s*(?:\d{4,6}|[A-Za-z]\d{3,})/;
+
+  function normArticle(value) {
+    var raw = String(value || "").trim();
+    if (!raw) return "";
+    if (/^\d+$/.test(raw)) return String(parseInt(raw, 10));
+    return raw;
+  }
+
+  function codesFromParenBody(body) {
+    var out = [];
+    var seen = {};
+    var m;
+    var re = new RegExp(CODE_RE.source, "g");
+    while ((m = re.exec(body || ""))) {
+      var c = normArticle(m[1]);
+      if (c && !seen[c]) {
+        seen[c] = true;
+        out.push(c);
+      }
+    }
+    return out;
+  }
+
+  function extractRelatedCodes(name, selfArticle) {
+    var selfNorm = normArticle(selfArticle);
+    var related = [];
+    var seen = {};
+    var m;
+    var re = new RegExp(CODE_LIST_PAREN_RE.source, "g");
+    while ((m = re.exec(name || ""))) {
+      var body = m[1] || "";
+      if (/\bуп\.?\s*\d/i.test(body) && !CODE_LIST_SHAPE_RE.test(body)) continue;
+      codesFromParenBody(body).forEach(function (c) {
+        if (selfNorm && c === selfNorm) return;
+        if (!seen[c]) {
+          seen[c] = true;
+          related.push(c);
+        }
+      });
+    }
+    return related;
+  }
+
+  function parseNomenclatureAssembly(name, article) {
+    var text = String(name || "").trim();
+    var art = normArticle(article);
+    var markers = [];
+    var related = extractRelatedCodes(text, art);
+    if (KIT_WORD_RE.test(text)) markers.push("kit_word");
+    if (PLUS_PAIR_RE.test(text)) markers.push("plus_pair");
+    var parenRe = new RegExp(CODE_LIST_PAREN_RE.source, "g");
+    var pm;
+    while ((pm = parenRe.exec(text))) {
+      if (CODE_LIST_SHAPE_RE.test(pm[1] || "")) {
+        markers.push("code_list_paren");
+        break;
+      }
+    }
+    if (related.length >= 2) markers.push("multi_codes");
+    else if (related.length === 1) markers.push("single_other_code");
+    var isKit =
+      markers.indexOf("kit_word") >= 0 ||
+      markers.indexOf("plus_pair") >= 0 ||
+      markers.indexOf("multi_codes") >= 0 ||
+      markers.indexOf("code_list_paren") >= 0;
+    return {
+      role: isKit ? "kit" : "plain",
+      related: related,
+      markers: markers,
+      usedIn: [],
+    };
+  }
+
+  function linkAssemblyRoles(items) {
+    // items: [{article, name, row?}, ...]
+    var drafts = {};
+    var order = [];
+    items.forEach(function (it) {
+      var art = normArticle(it.article);
+      if (!art) return;
+      var info = parseNomenclatureAssembly(it.name, art);
+      if (!drafts[art]) {
+        order.push(art);
+        drafts[art] = {
+          article: art,
+          name: it.name || "",
+          role: "plain",
+          related: [],
+          markers: [],
+          usedIn: [],
+          rows: [],
+        };
+      }
+      var d = drafts[art];
+      if (it.name) d.name = it.name;
+      if (info.role === "kit") d.role = "kit";
+      info.related.forEach(function (c) {
+        if (d.related.indexOf(c) < 0) d.related.push(c);
+      });
+      info.markers.forEach(function (m) {
+        if (d.markers.indexOf(m) < 0) d.markers.push(m);
+      });
+      if (it.row) d.rows.push(it.row);
+    });
+
+    Object.keys(drafts).forEach(function (art) {
+      var d = drafts[art];
+      if (d.role !== "kit") return;
+      d.related.forEach(function (code) {
+        if (code === art) return;
+        if (!drafts[code]) {
+          order.push(code);
+          drafts[code] = {
+            article: code,
+            name: "",
+            role: "component",
+            related: [],
+            markers: ["from_kit_ref"],
+            usedIn: [],
+            rows: [],
+          };
+        }
+        var target = drafts[code];
+        if (target.usedIn.indexOf(art) < 0) target.usedIn.push(art);
+        if (target.role === "plain") {
+          target.role = "component";
+          if (target.markers.indexOf("from_kit_ref") < 0) {
+            target.markers.push("from_kit_ref");
+          }
+        }
+      });
+    });
+
+    return drafts;
+  }
+
+  function collectDemoNomenclatureItems() {
+    var items = [];
+    var salesTable = document.getElementById("mwd-sales-table");
+    if (salesTable) {
+      salesTable.querySelectorAll("tbody tr.mwd-sa-row").forEach(function (row) {
+        var art =
+          row.getAttribute("data-art") ||
+          ((row.querySelector(".mwd-sa-art") || {}).textContent || "");
+        var name = ((row.querySelector(".mwd-sa-name") || {}).textContent || "")
+          .replace(/\s*·\s*донор\s*$/i, "")
+          .replace(/\s*·\s*комплект\s*$/i, "")
+          .replace(/\s*·\s*комплектующая\s*$/i, "")
+          .trim();
+        items.push({ article: art, name: name, row: row });
+      });
+    }
+    if (asmTable) {
+      asmMainRows().forEach(function (row) {
+        var art =
+          row.getAttribute("data-art") ||
+          ((row.querySelector(".mwd-art") || {}).textContent || "");
+        var name = ((row.querySelector(".mwd-asm-name") || {}).textContent || "").trim();
+        items.push({ article: art, name: name, row: row });
+      });
+    }
+    var purTable = document.getElementById("mwd-purchase-table");
+    if (purTable) {
+      purTable.querySelectorAll("tbody tr.mwd-pur-row").forEach(function (row) {
+        var art =
+          row.getAttribute("data-art") ||
+          ((row.querySelector(".mwd-art") || {}).textContent || "");
+        var name = ((row.querySelector(".mwd-pur-name") || {}).textContent || "").trim();
+        items.push({ article: art, name: name, row: row });
+      });
+    }
+    return items;
+  }
+
+  function makeAsmLinkIcon() {
+    // Иконка «связь» (два звена цепи) — товар входит в сборки.
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "mwd-sa-link-ico");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("width", "12");
+    svg.setAttribute("height", "12");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    var p1 = document.createElementNS(ns, "path");
+    p1.setAttribute(
+      "d",
+      "M6.5 9.5a2.75 2.75 0 0 0 3.9 0l1.6-1.6a2.75 2.75 0 1 0-3.9-3.9L7.3 4.8"
+    );
+    p1.setAttribute("fill", "none");
+    p1.setAttribute("stroke", "currentColor");
+    p1.setAttribute("stroke-width", "1.6");
+    p1.setAttribute("stroke-linecap", "round");
+    p1.setAttribute("stroke-linejoin", "round");
+    var p2 = document.createElementNS(ns, "path");
+    p2.setAttribute(
+      "d",
+      "M9.5 6.5a2.75 2.75 0 0 0-3.9 0L4 8.1a2.75 2.75 0 1 0 3.9 3.9l.8-.8"
+    );
+    p2.setAttribute("fill", "none");
+    p2.setAttribute("stroke", "currentColor");
+    p2.setAttribute("stroke-width", "1.6");
+    p2.setAttribute("stroke-linecap", "round");
+    p2.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(p1);
+    svg.appendChild(p2);
+    return svg;
+  }
+
+  function attachAssemblyClickUi(row, nameCell, d) {
+    if (!nameCell) return;
+    var old = nameCell.querySelector(".mwd-sa-role-tag");
+    if (old) old.remove();
+    row.classList.remove("mwd-sa-asm-clickable");
+    if (d.role !== "kit" && d.role !== "component") return;
+    row.classList.add("mwd-sa-asm-clickable");
+    if (d.role === "component") {
+      var tag = document.createElement("span");
+      tag.className = "mwd-sa-role-tag mwd-sa-role-link";
+      tag.setAttribute(
+        "aria-label",
+        d.usedIn.length
+          ? "Связь со сборками: " + d.usedIn.join(", ")
+          : "Входит в сборку"
+      );
+      tag.title =
+        d.usedIn.length
+          ? "Входит в сборки: " +
+            d.usedIn.join(", ") +
+            " · клик — показать все"
+          : "Входит в сборку · клик — показать связанные";
+      tag.appendChild(document.createTextNode(" "));
+      tag.appendChild(makeAsmLinkIcon());
+      nameCell.appendChild(tag);
+    }
+    if (d.role === "kit") {
+      row.setAttribute(
+        "title",
+        d.related.length
+          ? "Комплект. Состав: " +
+            d.related.join(", ") +
+            ". Клик — фильтр по составу"
+          : "Комплект по названию"
+      );
+    } else {
+      row.setAttribute(
+        "title",
+        d.usedIn.length
+          ? "Связь со сборками: " +
+            d.usedIn.join(", ") +
+            ". Клик — показать все"
+          : "Входит в сборку"
+      );
+    }
+  }
+
+  function applyNomenclatureAssemblyMarks() {
+    var drafts = linkAssemblyRoles(collectDemoNomenclatureItems());
+    Object.keys(drafts).forEach(function (art) {
+      var d = drafts[art];
+      d.rows.forEach(function (row) {
+        row.setAttribute("data-kind", d.role === "component" ? "donor" : d.role);
+        row.setAttribute("data-related", d.related.join(","));
+        row.setAttribute("data-used-in", d.usedIn.join(","));
+        if (row.classList.contains("mwd-sa-row")) {
+          attachAssemblyClickUi(row, row.querySelector(".mwd-sa-name"), d);
+        }
+        if (row.classList.contains("mwd-pur-row")) {
+          attachAssemblyClickUi(row, row.querySelector(".mwd-pur-name"), d);
+        }
+        if (row.classList.contains("mwd-asm-row")) {
+          attachAssemblyClickUi(row, row.querySelector(".mwd-asm-name"), d);
+          // Статус ≠ тип: тип в data-kind (kit/donor), статус — только
+          // остаток/работа: assembly | deficit | ok. Не пишем status=donor.
+          if (d.role === "component" && row.getAttribute("data-status") === "donor") {
+            var fixed =
+              row.getAttribute("data-deficit") === "1" ? "deficit" : "ok";
+            row.setAttribute("data-status", fixed);
+            var stFix = row.querySelector(".mwd-st");
+            if (stFix) {
+              stFix.className =
+                "mwd-st " + (fixed === "deficit" ? "mwd-st-deficit" : "mwd-st-ok");
+              stFix.textContent = fixed === "deficit" ? "дефицит" : "ок";
+            }
+          }
+        }
+      });
+    });
+  }
+
+  // ── Сборка и остаток: фильтры + KPI/итоги по видимым строкам ──
+  var asmTable = document.getElementById("mwd-asm-table");
+  var asmStatus = document.getElementById("mwd-asm-status");
+  var asmMode = document.getElementById("mwd-asm-mode");
+  var asmSearch = document.getElementById("mwd-asm-search");
+  var asmLinkFilterEl = document.getElementById("mwd-asm-link-filter");
+  var asmLinkFilterTitle = document.getElementById("mwd-asm-link-filter-title");
+  var asmLinkFilterText = document.getElementById("mwd-asm-link-filter-text");
+  var asmLinkFilterClear = document.getElementById("mwd-asm-link-filter-clear");
+  var ASM_STATUSES = ["assembly", "deficit", "ok"];
+  var ASM_MODES = ["kit", "donor"];
+  // { focusArt, arts: string[], mode: "component"|"kit" } | null
+  var asmLinkFilter = null;
+
+  function formatRuInt(n) {
+    var s = String(Math.round(n || 0));
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+  }
+
+  function asmMainRows() {
+    if (!asmTable) return [];
+    return Array.prototype.slice.call(asmTable.querySelectorAll("tbody tr.mwd-asm-row"));
+  }
+
+  function asmRowArt(row) {
+    if (!row) return "";
+    return normArticle(
+      row.getAttribute("data-art") ||
+        ((row.querySelector(".mwd-art") || {}).textContent || "")
+    );
+  }
+
+  function asmRowName(row) {
+    if (!row) return "";
+    var el = row.querySelector(".mwd-asm-name");
+    return ((el && el.textContent) || "").trim();
+  }
+
+  function shortAsmName(name) {
+    var s = String(name || "").trim();
+    s = s.replace(/\s*\([^)]*\)\s*(С-Р)?\s*$/i, "").trim();
+    if (s.length > 42) s = s.slice(0, 40) + "…";
+    return s || "—";
+  }
+
+  function clearAsmLinkFilter(opts) {
+    opts = opts || {};
+    asmLinkFilter = null;
+    if (asmLinkFilterEl) asmLinkFilterEl.hidden = true;
+    if (asmLinkFilterText) asmLinkFilterText.textContent = "";
+    asmMainRows().forEach(function (row) {
+      row.classList.remove("is-asm-focus", "is-asm-related");
+    });
+    if (!opts.skipApply) applyAsmFilters(opts);
+  }
+
+  function buildAsmLinkFilterBanner(focusArt, relatedArts, mode) {
+    var focusRow = null;
+    asmMainRows().forEach(function (row) {
+      if (asmRowArt(row) === focusArt) focusRow = row;
+    });
+    var focusName = shortAsmName(asmRowName(focusRow));
+    if (mode === "component") {
+      var needQty = focusRow
+        ? parseFloat(focusRow.getAttribute("data-in-asm")) || 0
+        : 0;
+      var parts = [];
+      relatedArts.forEach(function (art) {
+        if (art === focusArt) return;
+        var kitRow = null;
+        asmMainRows().forEach(function (row) {
+          if (asmRowArt(row) === art) kitRow = row;
+        });
+        if (!kitRow) return;
+        var kitIn = parseFloat(kitRow.getAttribute("data-in-asm")) || 0;
+        parts.push(
+          shortAsmName(asmRowName(kitRow)) + " — " + formatRuInt(kitIn) + " шт"
+        );
+      });
+      return {
+        title: "Сборки с этим товаром",
+        text:
+          focusName +
+          (needQty ? " " + formatRuInt(needQty) + " шт" : "") +
+          (parts.length ? " = " + parts.join(" + ") : "") ||
+          "Показаны комплектующая и связанные сборки",
+      };
+    }
+    var bits = [];
+    relatedArts.forEach(function (art) {
+      if (art === focusArt) return;
+      var partRow = null;
+      asmMainRows().forEach(function (row) {
+        if (asmRowArt(row) === art) partRow = row;
+      });
+      if (!partRow) {
+        bits.push(art);
+        return;
+      }
+      bits.push(shortAsmName(asmRowName(partRow)) + " (" + art + ")");
+    });
+    return {
+      title: "Состав комплекта",
+      text:
+        focusName +
+        (bits.length ? " → " + bits.join(", ") : " · состав по названию"),
+    };
+  }
+
+  function setAsmLinkFilterFromRow(row) {
+    if (!row) return;
+    var art = asmRowArt(row);
+    if (!art) return;
+    var usedIn = String(row.getAttribute("data-used-in") || "")
+      .split(",")
+      .map(normArticle)
+      .filter(Boolean);
+    var related = String(row.getAttribute("data-related") || "")
+      .split(",")
+      .map(normArticle)
+      .filter(Boolean);
+    var kind = row.getAttribute("data-kind") || "";
+    var mode = "";
+    var arts = [art];
+    if (kind === "donor" || kind === "component") {
+      if (!usedIn.length) {
+        showToast("не входит в сборки");
+        return;
+      }
+      mode = "component";
+      usedIn.forEach(function (a) {
+        if (arts.indexOf(a) < 0) arts.push(a);
+      });
+    } else if (kind === "kit") {
+      if (!related.length) {
+        showToast("состав не найден");
+        return;
+      }
+      mode = "kit";
+      related.forEach(function (a) {
+        if (arts.indexOf(a) < 0) arts.push(a);
+      });
+    } else {
+      showToast("не комплект и не комплектующая");
+      return;
+    }
+    if (
+      asmLinkFilter &&
+      asmLinkFilter.focusArt === art &&
+      asmLinkFilter.mode === mode
+    ) {
+      clearAsmLinkFilter();
+      return;
+    }
+    // Связанный фильтр показывает и сборки, и детали — сбрасываем тип/статус.
+    if (asmStatus) asmStatus.value = "";
+    if (asmMode) asmMode.value = "";
+    asmLinkFilter = { focusArt: art, arts: arts, mode: mode };
+    var banner = buildAsmLinkFilterBanner(art, arts, mode);
+    if (asmLinkFilterTitle) asmLinkFilterTitle.textContent = banner.title;
+    if (asmLinkFilterText) asmLinkFilterText.textContent = banner.text;
+    if (asmLinkFilterEl) asmLinkFilterEl.hidden = false;
+    applyAsmFilters();
+  }
+
+  function resetAsmFilters(opts) {
+    if (asmStatus) asmStatus.value = "";
+    if (asmMode) asmMode.value = "";
+    if (asmSearch) asmSearch.value = "";
+    clearAsmLinkFilter({ skipApply: true });
+    applyAsmFilters(opts);
+  }
+
+  function applyAsmFilters(opts) {
+    opts = opts || {};
+    if (!asmTable) return 0;
+    var status = asmStatus ? asmStatus.value : "";
+    var mode = asmMode ? asmMode.value : "";
+    var q = asmSearch ? (asmSearch.value || "").trim().toLowerCase() : "";
+    var pos = 0;
+    var def = 0;
+    var inAsm = 0;
+    var stock = 0;
+    var money = 0;
+
+    asmMainRows().forEach(function (row) {
+      var kind = row.getAttribute("data-kind") || "";
+      var rowStatus = row.getAttribute("data-status") || "";
+      var artNorm = asmRowArt(row);
+      var art = artNorm.toLowerCase();
+      var name = asmRowName(row).toLowerCase();
+      var okStatus = !status || rowStatus === status;
+      var okMode = !mode || kind === mode;
+      var okSearch = !q || art.indexOf(q) >= 0 || name.indexOf(q) >= 0;
+      var okLink =
+        !asmLinkFilter || asmLinkFilter.arts.indexOf(artNorm) >= 0;
+      var visible = okStatus && okMode && okSearch && okLink;
+      row.classList.toggle("mwd-row-hidden", !visible);
+      row.classList.toggle(
+        "is-asm-focus",
+        !!(asmLinkFilter && asmLinkFilter.focusArt === artNorm)
+      );
+      row.classList.toggle(
+        "is-asm-related",
+        !!(
+          asmLinkFilter &&
+          asmLinkFilter.focusArt !== artNorm &&
+          asmLinkFilter.arts.indexOf(artNorm) >= 0
+        )
+      );
+      var expandId = row.getAttribute("data-expand");
+      if (expandId) {
+        var detail = asmTable.querySelector('.mwd-detail[data-detail="' + expandId + '"]');
+        if (detail) detail.classList.toggle("mwd-row-hidden", !visible);
+      }
+      if (!visible) return;
+      pos += 1;
+      if (row.getAttribute("data-deficit") === "1") def += 1;
+      inAsm += parseFloat(row.getAttribute("data-in-asm")) || 0;
+      var st = parseFloat(row.getAttribute("data-stock")) || 0;
+      var price = parseFloat(row.getAttribute("data-price")) || 0;
+      stock += st;
+      money += st * price;
+    });
+
+    function setText(id, val) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+    setText("mwd-asm-kpi-pos", formatRuInt(pos));
+    setText("mwd-asm-kpi-def", formatRuInt(def));
+    setText("mwd-asm-kpi-stock", formatRuInt(stock));
+    setText("mwd-asm-kpi-money", formatRuInt(money));
+    setText("mwd-asm-tot-in", formatRuInt(inAsm));
+    setText("mwd-asm-tot-stock", formatRuInt(stock));
+    setText("mwd-asm-tot-money", formatRuInt(money));
+
+    if (!opts.skipSave) {
+      saveState({
+        asmStatus: status,
+        asmMode: mode,
+        asmSearch: asmSearch ? asmSearch.value : "",
+      });
+    }
+    return pos;
+  }
+
+  if (asmTable) {
+    if (asmStatus && ASM_STATUSES.indexOf(saved.asmStatus) >= 0) {
+      asmStatus.value = saved.asmStatus;
+    }
+    if (asmSearch && typeof saved.asmSearch === "string") asmSearch.value = saved.asmSearch;
+    if (asmMode) {
+      if (saved.asmMode === "all") asmMode.value = "";
+      else if (ASM_MODES.indexOf(saved.asmMode) >= 0) asmMode.value = saved.asmMode;
+    }
+    if (asmStatus) {
+      asmStatus.addEventListener("change", function () {
+        applyAsmFilters();
+      });
+    }
+    if (asmMode) {
+      asmMode.addEventListener("change", function () {
+        applyAsmFilters();
+      });
+    }
+    if (asmSearch) {
+      asmSearch.addEventListener("input", function () {
+        applyAsmFilters();
+      });
+    }
+    if (asmLinkFilterClear) {
+      asmLinkFilterClear.addEventListener("click", function () {
+        clearAsmLinkFilter();
+      });
+    }
+    asmTable.addEventListener("click", function (e) {
+      var row = e.target.closest("tr.mwd-asm-row");
+      if (!row || !row.classList.contains("mwd-sa-asm-clickable")) return;
+      setAsmLinkFilterFromRow(row);
+    });
+    applyNomenclatureAssemblyMarks();
+    var visible = applyAsmFilters({ skipSave: true });
+    // Сохранённый/подставленный поиск вроде «115001» прячет все моки — на входе сбрасываем.
+    if (visible === 0 && asmMainRows().length) {
+      resetAsmFilters({ skipSave: false });
+    }
+    // Автозаполнение браузера может вписать поиск уже после скрипта.
+    window.setTimeout(function () {
+      if (applyAsmFilters({ skipSave: true }) === 0 && asmMainRows().length) {
+        resetAsmFilters({ skipSave: false });
+      }
+    }, 400);
+  }
 
   // ── Passport subtabs ──
   var subtabs = root.querySelectorAll("#mwd-passport-tabs .mwd-subtab");
@@ -385,6 +981,7 @@
   // ── Passport form fill / inner tabs / validation ──
   var passContext = document.getElementById("mwd-pass-context");
   var createArtPreview = document.getElementById("mwd-create-art-preview");
+  var createArtSeller = document.getElementById("mwd-create-art-seller");
   var createArtBtn = document.getElementById("mwd-pass-create-art");
   var passReqHint = document.getElementById("mwd-pass-req-hint");
   var honestToggle = document.getElementById("mwd-pass-honest-toggle");
@@ -394,7 +991,7 @@
   var tariffActiveLabel = document.getElementById("mwd-tariff-active-label");
   var currentPassArt = "";
   var passCreateAttempted = false;
-  var VALID_PASS_TABS = ["main", "logistics", "content", "media"];
+  var VALID_PASS_TABS = ["main", "names", "logistics", "content", "media"];
 
   function resetDocDropzone(kind) {
     var zone = root.querySelector('[data-doc-drop="' + kind + '"]');
@@ -923,7 +1520,13 @@
 
   function updatePassContext() {
     if (!passContext) return;
-    if (currentPassMode !== "edit" || !editQueue.length) {
+    if (currentPassMode !== "edit") {
+      passContext.hidden = true;
+      passContext.classList.remove("is-queue-done");
+      return;
+    }
+    passContext.hidden = false;
+    if (!editQueue.length) {
       passContext.classList.remove("is-queue-done");
       return;
     }
@@ -1017,6 +1620,198 @@
     });
   }
 
+  // Префиксы по группе кабинета (АА/МА/ИА/ООО), не «A=ЧМА».
+  // Формат авто-имени: {prefix}{code6} {short_base}, итог ≤40.
+  var NAME_MAX = 40;
+  var CABINET_PREFIX_BY_GROUP = {
+    AA: "",
+    MA: "М ",
+    IA: "И ",
+    OOO: "О ",
+  };
+  var NAME_CABINETS = [
+    { label: "Озон ГАА", group: "AA", kind: "ip" },
+    { label: "Озон ЧМА", group: "MA", kind: "ip" },
+    { label: "Озон ЧИА", group: "IA", kind: "ip" },
+    { label: "Озон ООО", group: "OOO", kind: "ooo" },
+    { label: "ВБ ГАА", group: "AA", kind: "ip" },
+    { label: "ВБ ЧМА", group: "MA", kind: "ip" },
+    { label: "ВБ ЧИА", group: "IA", kind: "ip" },
+    { label: "ВБ ООО", group: "OOO", kind: "ooo" },
+  ];
+
+  /** Числовой код 1С без ведущих нулей. */
+  function articleCode(value) {
+    var m = String(value == null ? "" : value).match(/\d{3,}/);
+    if (!m) return "";
+    return String(parseInt(m[0], 10));
+  }
+
+  /** Код, дополненный нулями слева до 6 цифр (для авто-имени). */
+  function code6(value) {
+    var c = articleCode(value);
+    if (!c) return "";
+    return c.length >= 6 ? c : ("000000" + c).slice(-6);
+  }
+
+  /**
+   * Сокращение полного имени → база для кабинетов.
+   * Стоп-слова / типичные замены как в Excel-калькуляторе товароведа.
+   */
+  function shortenProductName(fullName) {
+    var s = String(fullName || "").trim();
+    if (!s) return "";
+    s = s.replace(/^\d{3,}\s+/, "");
+    s = s.replace(/\([^)]*\)/g, " ");
+    s = s.replace(/(?:^|\s)(?:из|для|под|при|без|или|над|между)(?=\s|$)/gi, " ");
+    var repl = [
+      [/подставка/gi, "подст."],
+      [/книг\w*/gi, "книг"],
+      [/хозяйственн\w*/gi, "хоз."],
+      [/усиленн\w*/gi, "усил."],
+      [/деревянн\w*/gi, "дер."],
+      [/металлич\w*/gi, "мет."],
+      [/пластиков\w*/gi, "пласт."],
+      [/набор/gi, "наб."],
+      [/штук\w*|шт\.?/gi, "шт"],
+      [/триколор/gi, "ТРИКОЛ"],
+      [/колоском?/gi, "КОЛОС"],
+      [/первый/gi, "1-й"],
+      [/первы\w*/gi, "1-й"],
+    ];
+    repl.forEach(function (pair) {
+      s = s.replace(pair[0], pair[1]);
+    });
+    s = s.replace(/\s+д\s+книг/gi, " д/книг");
+    s = s.replace(/["«»]/g, "");
+    s = s.replace(/\s+/g, " ").trim();
+    if (s.length > NAME_MAX) {
+      var cut = s.slice(0, NAME_MAX);
+      var sp = cut.lastIndexOf(" ");
+      s = (sp > 20 ? cut.slice(0, sp) : cut).trim();
+    }
+    return s;
+  }
+
+  function cabinetPrefix(group) {
+    return Object.prototype.hasOwnProperty.call(CABINET_PREFIX_BY_GROUP, group)
+      ? CABINET_PREFIX_BY_GROUP[group]
+      : "";
+  }
+
+  /** {prefix}{code} {short} — итог ≤40; при переполнении режем short. */
+  function buildCabinetName(prefix, code, shortBase) {
+    var p = prefix || "";
+    var c = code || "";
+    var head = p + c;
+    var short = String(shortBase || "").trim();
+    if (!c && !short) return "";
+    if (!short) return head.slice(0, NAME_MAX);
+    var sep = head ? " " : "";
+    var full = head + sep + short;
+    if (full.length <= NAME_MAX) return full;
+    var budget = NAME_MAX - head.length - sep.length;
+    if (budget <= 0) return head.slice(0, NAME_MAX);
+    var cut = short.slice(0, budget);
+    var sp = cut.lastIndexOf(" ");
+    if (sp > Math.min(8, budget - 1)) cut = cut.slice(0, sp);
+    return (head + sep + cut).trim();
+  }
+
+  function updateNameLenEl(el, n, max) {
+    if (!el) return;
+    if (max != null) {
+      el.textContent = n + " / " + max;
+      el.classList.toggle("is-over", n > max);
+    } else {
+      el.textContent = String(n);
+      el.classList.remove("is-over");
+    }
+  }
+
+  function copyCabinetText(text) {
+    if (!text) return;
+    function ok() {
+      showToast("скопировано");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, function () {
+        showToast(text);
+      });
+      return;
+    }
+    showToast(text);
+  }
+
+  function renderCabinetNames() {
+    var tbody = document.getElementById("mwd-pass-names-tbody");
+    if (!tbody) return;
+    var fullEl = document.getElementById("mwd-pass-full-name");
+    var fullLen = document.getElementById("mwd-pass-full-len");
+    var shortInput = root.querySelector('[data-pass-field="short_base"]');
+    var shortLen = document.getElementById("mwd-pass-short-len");
+    var nameEl = root.querySelector('[data-pass-field="name"]');
+    var artEl = root.querySelector('[data-pass-field="art"]');
+    var ndsEl = root.querySelector('[data-pass-field="nds"]');
+
+    var full = String((nameEl && nameEl.value) || "");
+    if (fullEl) fullEl.textContent = full.trim() ? full : "—";
+    updateNameLenEl(fullLen, full.length);
+
+    var short = String((shortInput && shortInput.value) || "");
+    updateNameLenEl(shortLen, short.length, NAME_MAX);
+    if (shortInput) shortInput.classList.toggle("is-over", short.length > NAME_MAX);
+
+    var code = code6((artEl && artEl.value) || "");
+    var nds = normalizeNds((ndsEl && ndsEl.value) || "");
+    var oooOk = nds === "22";
+
+    tbody.innerHTML = "";
+    NAME_CABINETS.forEach(function (cab) {
+      var skip = cab.kind === "ooo" && nds && !oooOk;
+      var name = skip
+        ? "НЕ заводим"
+        : buildCabinetName(cabinetPrefix(cab.group), code, short);
+      var len = skip ? 0 : name.length;
+
+      var tr = document.createElement("tr");
+      if (skip) tr.className = "is-skip";
+
+      var tdCab = document.createElement("td");
+      tdCab.className = "mwd-n-cab";
+      tdCab.textContent = cab.label;
+
+      var tdName = document.createElement("td");
+      tdName.className = "mwd-n-name" + (skip ? " is-skip-label" : "");
+      tdName.textContent = name;
+
+      var tdLen = document.createElement("td");
+      tdLen.className = "num";
+      tdLen.textContent = skip ? "—" : String(len);
+
+      var tdCopy = document.createElement("td");
+      tdCopy.className = "mwd-n-copy";
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mwd-btn mwd-btn-sm";
+      btn.textContent = "копировать";
+      btn.disabled = skip || !name;
+      btn.title = skip ? "НЕ заводим" : "Скопировать авто-имя";
+      if (!skip && name) {
+        btn.addEventListener("click", function () {
+          copyCabinetText(name);
+        });
+      }
+      tdCopy.appendChild(btn);
+
+      tr.appendChild(tdCab);
+      tr.appendChild(tdName);
+      tr.appendChild(tdLen);
+      tr.appendChild(tdCopy);
+      tbody.appendChild(tr);
+    });
+  }
+
   function applyNdsCabinets(ndsRaw) {
     var nds = normalizeNds(ndsRaw);
     var hint = document.getElementById("mwd-pass-cab-hint");
@@ -1045,11 +1840,53 @@
       }
     }
     syncCreateArtCabinetOptions(nds);
+    renderCabinetNames();
+  }
+
+  function fillCreateArtCabinetSelect() {
+    var sel = document.getElementById("mwd-create-art-cabinet");
+    if (!sel) return;
+    var prev = sel.value;
+    sel.innerHTML = "";
+    NAME_CABINETS.forEach(function (cab) {
+      var opt = document.createElement("option");
+      opt.value = cab.label;
+      opt.textContent = cab.label;
+      opt.setAttribute("data-cab-kind", cab.kind);
+      opt.setAttribute("data-cab-group", cab.group);
+      sel.appendChild(opt);
+    });
+    if (prev) sel.value = prev;
+  }
+
+  function findCabinetByLabel(label) {
+    var i;
+    for (i = 0; i < NAME_CABINETS.length; i++) {
+      if (NAME_CABINETS[i].label === label) return NAME_CABINETS[i];
+    }
+    return null;
+  }
+
+  function cabinetIsSkip(cab, nds) {
+    if (!cab) return true;
+    return cab.kind === "ooo" && nds && nds !== "22";
+  }
+
+  function firstEnabledCreateArtOption(sel) {
+    var i;
+    var opt;
+    if (!sel) return null;
+    for (i = 0; i < sel.options.length; i++) {
+      opt = sel.options[i];
+      if (!opt.disabled && !opt.hidden) return opt;
+    }
+    return null;
   }
 
   function syncCreateArtCabinetOptions(nds) {
     var sel = document.getElementById("mwd-create-art-cabinet");
     if (!sel) return;
+    fillCreateArtCabinetSelect();
     var oooOk = nds === "22";
     var firstEnabled = null;
     Array.prototype.forEach.call(sel.options, function (opt) {
@@ -1059,9 +1896,42 @@
       opt.hidden = !!blocked;
       if (!blocked && firstEnabled == null) firstEnabled = opt;
     });
-    if (sel.selectedOptions[0] && sel.selectedOptions[0].disabled && firstEnabled) {
+    var cur = sel.selectedOptions[0];
+    if ((!cur || cur.disabled || cur.hidden) && firstEnabled) {
       firstEnabled.selected = true;
     }
+    updateCreateArtPreview();
+  }
+
+  function updateCreateArtPreview() {
+    var sel = document.getElementById("mwd-create-art-cabinet");
+    var hint = document.getElementById("mwd-create-art-nds-hint");
+    var ndsEl = root.querySelector('[data-pass-field="nds"]');
+    var artEl = root.querySelector('[data-pass-field="art"]');
+    var shortEl = root.querySelector('[data-pass-field="short_base"]');
+    var nds = normalizeNds((ndsEl && ndsEl.value) || "");
+    var art = (artEl && artEl.value) || currentPassArt || "";
+    var short = (shortEl && shortEl.value) || "";
+    var oooBlocked = !!(nds && nds !== "22");
+    var cab = sel ? findCabinetByLabel(sel.value) : null;
+    var opt = sel && sel.selectedOptions[0];
+    var enabled = firstEnabledCreateArtOption(sel);
+    var skip = !cab || !enabled || (opt && (opt.disabled || opt.hidden)) || cabinetIsSkip(cab, nds);
+    var prefix = cab ? cabinetPrefix(cab.group) : "";
+    var code = code6(art);
+    var seller = skip || !code ? "" : prefix + code;
+    var name = skip
+      ? (cab ? "НЕ заводим" : "")
+      : buildCabinetName(prefix, code, short);
+
+    if (hint) {
+      hint.hidden = !oooBlocked;
+      hint.textContent = oooBlocked ? "ООО нельзя при этом НДС — только ИП" : "";
+    }
+    if (createArtSeller) createArtSeller.value = seller;
+    if (createArtPreview) createArtPreview.value = name;
+    var submit = document.getElementById("mwd-create-art-submit");
+    if (submit) submit.disabled = skip || !enabled;
   }
 
   function updatePassSubmitState() {
@@ -1171,6 +2041,13 @@
 
     setHonestUi(isHonestOn(data.honest), data.honest_category || "");
 
+    var shortEl = root.querySelector('[data-pass-field="short_base"]');
+    if (shortEl && !String(shortEl.value || "").trim()) {
+      shortEl.value = shortenProductName(
+        (root.querySelector('[data-pass-field="name"]') || {}).value
+      );
+    }
+
     var docs = data.docs || {};
     setDocStatus("cert", docs.cert);
     setDocStatus("decl", docs.decl);
@@ -1180,9 +2057,6 @@
     recalcVolume();
     applyNdsCabinets((root.querySelector('[data-pass-field="nds"]') || {}).value);
 
-    if (createArtPreview) {
-      createArtPreview.value = data.art ? String(data.art) : "";
-    }
     if (passContext) {
       if (opts.context === "manual" || !data.art) {
         passContext.textContent =
@@ -1346,6 +2220,21 @@
     artInputEl.addEventListener("input", function () {
       currentPassArt = artInputEl.value || "";
       updatePassSubmitState();
+      renderCabinetNames();
+    });
+  }
+
+  var nameInputEl = root.querySelector('[data-pass-field="name"]');
+  if (nameInputEl) {
+    nameInputEl.addEventListener("input", function () {
+      renderCabinetNames();
+    });
+  }
+
+  var shortInputEl = root.querySelector('[data-pass-field="short_base"]');
+  if (shortInputEl) {
+    shortInputEl.addEventListener("input", function () {
+      renderCabinetNames();
     });
   }
 
@@ -2488,16 +3377,8 @@
 
   function openCreateArtModal() {
     if (!createArtModal) return;
-    if (createArtPreview) {
-      var artInput = root.querySelector('[data-pass-field="art"]');
-      var art = (artInput && artInput.value) || currentPassArt || "";
-      var cab = createArtCabinet ? createArtCabinet.value : "";
-      var prefix =
-        cab.indexOf("Озон") === 0 || cab.indexOf("ОЗОН") === 0
-          ? "О "
-          : "";
-      createArtPreview.value = art ? prefix + art : "";
-    }
+    var ndsEl = root.querySelector('[data-pass-field="nds"]');
+    syncCreateArtCabinetOptions(normalizeNds((ndsEl && ndsEl.value) || ""));
     createArtModal.hidden = false;
     document.body.style.overflow = "hidden";
   }
@@ -2530,12 +3411,15 @@
   }
   if (createArtCabinet) {
     createArtCabinet.addEventListener("change", function () {
-      if (createArtModal && !createArtModal.hidden) openCreateArtModal();
+      updateCreateArtPreview();
     });
   }
   if (createArtSubmit) {
     createArtSubmit.addEventListener("click", function () {
-      showToast("демо");
+      if (createArtSubmit.disabled) return;
+      var cab = (createArtCabinet && createArtCabinet.value) || "";
+      var name = (createArtPreview && createArtPreview.value) || "";
+      showToast("демо · " + [cab, name].filter(Boolean).join(" · "));
       closeCreateArtModal();
     });
   }
@@ -2555,6 +3439,7 @@
     });
     if (!opts.skipSave) saveState({ passMode: mode });
     renderQueueStrip();
+    updatePassContext();
   }
 
   root.querySelectorAll("[data-pass-mode]").forEach(function (chip) {
@@ -2581,16 +3466,182 @@
   // Старт всегда «Новый товар»; «Редакция» только после клика из ведомости
   activatePassMode("new", { skipSave: true });
 
-  // ── Purchase status filter ──
+  // ── Purchase: статус закупки + тип сборки + клик-фильтр связей ──
   var purchaseSelect = document.getElementById("mwd-purchase-status");
+  var purchaseMode = document.getElementById("mwd-purchase-mode");
   var purchaseTable = document.getElementById("mwd-purchase-table");
+  var purLinkFilterEl = document.getElementById("mwd-pur-link-filter");
+  var purLinkFilterTitle = document.getElementById("mwd-pur-link-filter-title");
+  var purLinkFilterText = document.getElementById("mwd-pur-link-filter-text");
+  var purLinkFilterClear = document.getElementById("mwd-pur-link-filter-clear");
+  var PUR_MODES = ["kit", "donor"];
+  // { focusArt, arts: string[], mode: "component"|"kit" } | null
+  var purLinkFilter = null;
+
+  function purMainRows() {
+    if (!purchaseTable) return [];
+    return Array.prototype.slice.call(
+      purchaseTable.querySelectorAll("tbody tr.mwd-pur-row")
+    );
+  }
+
+  function purRowArt(row) {
+    if (!row) return "";
+    return normArticle(
+      row.getAttribute("data-art") ||
+        ((row.querySelector(".mwd-art") || {}).textContent || "")
+    );
+  }
+
+  function purRowName(row) {
+    if (!row) return "";
+    var el = row.querySelector(".mwd-pur-name");
+    return ((el && el.textContent) || "").trim();
+  }
+
+  function shortPurName(name) {
+    var s = String(name || "").trim();
+    s = s.replace(/\s*\([^)]*\)\s*(С-Р)?\s*$/i, "").trim();
+    if (s.length > 42) s = s.slice(0, 40) + "…";
+    return s || "—";
+  }
+
+  function clearPurLinkFilter(opts) {
+    opts = opts || {};
+    purLinkFilter = null;
+    if (purLinkFilterEl) purLinkFilterEl.hidden = true;
+    if (purLinkFilterText) purLinkFilterText.textContent = "";
+    purMainRows().forEach(function (row) {
+      row.classList.remove("is-asm-focus", "is-asm-related");
+    });
+    if (!opts.skipApply) applyPurchaseFilter();
+  }
+
+  function buildPurLinkFilterBanner(focusArt, relatedArts, mode) {
+    var focusRow = null;
+    purMainRows().forEach(function (row) {
+      if (purRowArt(row) === focusArt) focusRow = row;
+    });
+    var focusName = shortPurName(purRowName(focusRow));
+    if (mode === "component") {
+      var parts = [];
+      relatedArts.forEach(function (art) {
+        if (art === focusArt) return;
+        var kitRow = null;
+        purMainRows().forEach(function (row) {
+          if (purRowArt(row) === art) kitRow = row;
+        });
+        if (!kitRow) return;
+        parts.push(shortPurName(purRowName(kitRow)));
+      });
+      return {
+        title: "Сборки с этим товаром",
+        text:
+          focusName +
+          (parts.length ? " → " + parts.join(" + ") : " · связанные сборки"),
+      };
+    }
+    var bits = [];
+    relatedArts.forEach(function (art) {
+      if (art === focusArt) return;
+      var partRow = null;
+      purMainRows().forEach(function (row) {
+        if (purRowArt(row) === art) partRow = row;
+      });
+      if (!partRow) {
+        bits.push(art);
+        return;
+      }
+      bits.push(shortPurName(purRowName(partRow)) + " (" + art + ")");
+    });
+    return {
+      title: "Состав комплекта",
+      text:
+        focusName +
+        (bits.length ? " → " + bits.join(", ") : " · состав по названию"),
+    };
+  }
+
+  function setPurLinkFilterFromRow(row) {
+    if (!row) return;
+    var art = purRowArt(row);
+    if (!art) return;
+    var usedIn = String(row.getAttribute("data-used-in") || "")
+      .split(",")
+      .map(normArticle)
+      .filter(Boolean);
+    var related = String(row.getAttribute("data-related") || "")
+      .split(",")
+      .map(normArticle)
+      .filter(Boolean);
+    var kind = row.getAttribute("data-kind") || "";
+    var mode = "";
+    var arts = [art];
+    if (kind === "donor" || kind === "component") {
+      if (!usedIn.length) {
+        showToast("не входит в сборки");
+        return;
+      }
+      mode = "component";
+      usedIn.forEach(function (a) {
+        if (arts.indexOf(a) < 0) arts.push(a);
+      });
+    } else if (kind === "kit") {
+      if (!related.length) {
+        showToast("состав не найден");
+        return;
+      }
+      mode = "kit";
+      related.forEach(function (a) {
+        if (arts.indexOf(a) < 0) arts.push(a);
+      });
+    } else {
+      showToast("не комплект и не комплектующая");
+      return;
+    }
+    if (
+      purLinkFilter &&
+      purLinkFilter.focusArt === art &&
+      purLinkFilter.mode === mode
+    ) {
+      clearPurLinkFilter();
+      return;
+    }
+    if (purchaseMode && purchaseMode.value) purchaseMode.value = "";
+    if (purchaseSelect && purchaseSelect.value) purchaseSelect.value = "";
+    purLinkFilter = { focusArt: art, arts: arts, mode: mode };
+    var banner = buildPurLinkFilterBanner(art, arts, mode);
+    if (purLinkFilterTitle) purLinkFilterTitle.textContent = banner.title;
+    if (purLinkFilterText) purLinkFilterText.textContent = banner.text;
+    if (purLinkFilterEl) purLinkFilterEl.hidden = false;
+    applyPurchaseFilter();
+  }
 
   function applyPurchaseFilter() {
-    if (!purchaseSelect || !purchaseTable) return;
-    var val = purchaseSelect.value;
-    purchaseTable.querySelectorAll("tbody tr").forEach(function (tr) {
+    if (!purchaseTable) return;
+    var val = purchaseSelect ? purchaseSelect.value : "";
+    var mode = purchaseMode ? purchaseMode.value || "" : "";
+    purMainRows().forEach(function (tr) {
       var st = tr.getAttribute("data-status") || "";
-      tr.classList.toggle("mwd-row-hidden", val && st !== val);
+      var kind = tr.getAttribute("data-kind") || "";
+      var art = purRowArt(tr);
+      var okStatus = !val || st === val;
+      var okMode = !mode || kind === mode;
+      var okLink = !purLinkFilter || purLinkFilter.arts.indexOf(art) >= 0;
+      var visible = okStatus && okMode && okLink;
+      tr.classList.toggle("mwd-row-hidden", !visible);
+      tr.classList.toggle(
+        "is-asm-focus",
+        !!(purLinkFilter && purLinkFilter.focusArt === art)
+      );
+      tr.classList.toggle(
+        "is-asm-related",
+        !!(
+          purLinkFilter &&
+          purLinkFilter.focusArt !== art &&
+          purLinkFilter.arts.indexOf(art) >= 0
+        )
+      );
     });
   }
 
@@ -2602,7 +3653,508 @@
       applyPurchaseFilter();
       saveState({ purchaseStatus: purchaseSelect.value });
     });
+  }
+  if (purchaseMode && purchaseTable) {
+    if (saved.purchaseMode === "all") purchaseMode.value = "";
+    else if (PUR_MODES.indexOf(saved.purchaseMode) >= 0) {
+      purchaseMode.value = saved.purchaseMode;
+    }
+    purchaseMode.addEventListener("change", function () {
+      applyPurchaseFilter();
+      saveState({ purchaseMode: purchaseMode.value || "" });
+    });
+  }
+  if (purchaseTable) {
+    if (purLinkFilterClear) {
+      purLinkFilterClear.addEventListener("click", function () {
+        clearPurLinkFilter();
+        saveState({
+          purchaseStatus: purchaseSelect ? purchaseSelect.value : "",
+          purchaseMode: purchaseMode ? purchaseMode.value || "" : "",
+        });
+      });
+    }
     applyPurchaseFilter();
+  }
+
+  // ── Карточка поставщика (модалка) ──
+  var SUPPLIER_CARDS = {
+    energo: {
+      name: "ООО «Энергопак»",
+      inn: "7701234567",
+      city: "Москва",
+      contact: "Петров А. С. · +7 495 123-45-67",
+      pay: "отсрочка 14 дней",
+      lead: "5–7 дней",
+      since: "март 2023",
+      ontime: "96%",
+      yearSum: "412 000 ₽",
+      note: "Основной по батарейкам. Партии ровные, брак почти не бывает.",
+      claims: [],
+      orders: [
+        { date: "12.08.2026", num: "З-118", sku: "650975", qty: "400 шт", sum: "18 000 ₽", st: "оприходован" },
+        { date: "15.07.2026", num: "З-091", sku: "650975", qty: "300 шт", sum: "13 500 ₽", st: "оприходован" },
+        { date: "03.06.2026", num: "З-062", sku: "650975", qty: "500 шт", sum: "22 500 ₽", st: "оприходован" }
+      ]
+    },
+    smirnova: {
+      name: "ИП Смирнова",
+      inn: "503812345678",
+      city: "Подольск",
+      contact: "Смирнова Е. В. · +7 916 200-11-22",
+      pay: "предоплата 50%",
+      lead: "10–14 дней",
+      since: "ноябрь 2024",
+      ontime: "78%",
+      yearSum: "86 400 ₽",
+      note: "Маленькие партии, иногда срывает срок на 3–5 дней. Перед заказом лучше звонить.",
+      claims: ["18.05.2026 — мятая упаковка, 6 шт. Заменили без спора."],
+      orders: [
+        { date: "28.07.2026", num: "З-104", sku: "91044", qty: "80 шт", sum: "20 320 ₽", st: "оприходован" },
+        { date: "02.06.2026", num: "З-058", sku: "91044", qty: "50 шт", sum: "12 700 ₽", st: "оприходован" }
+      ]
+    },
+    hoztorg: {
+      name: "ООО «ХозТорг»",
+      inn: "7728123456",
+      city: "Котельники",
+      contact: "Иванова Н. П. · +7 495 988-00-11",
+      pay: "отсрочка 21 день",
+      lead: "3–5 дней",
+      since: "январь 2022",
+      ontime: "91%",
+      yearSum: "1 240 000 ₽",
+      note: "Крупный хоз. поставщик: грабберы, вёдра, сопутствующее. Можно собирать микс в одной машине.",
+      claims: [],
+      orders: [
+        { date: "08.08.2026", num: "З-115", sku: "55110, 8801", qty: "200 шт", sum: "42 800 ₽", st: "оприходован" },
+        { date: "20.07.2026", num: "З-097", sku: "8801", qty: "120 шт", sum: "11 400 ₽", st: "оприходован" },
+        { date: "11.06.2026", num: "З-071", sku: "55110", qty: "80 шт", sum: "14 640 ₽", st: "оприходован" }
+      ]
+    },
+    paklin: {
+      name: "ООО «ПакЛин»",
+      inn: "5001123456",
+      city: "Ногинск",
+      contact: "Кузнецов И. А. · +7 496 555-30-30",
+      pay: "отсрочка 14 дней",
+      lead: "4–6 дней",
+      since: "август 2021",
+      ontime: "98%",
+      yearSum: "640 000 ₽",
+      note: "Мешки 60 л — регулярный SKU. Цена держится, приход без сюрпризов.",
+      claims: [],
+      orders: [
+        { date: "10.08.2026", num: "З-116", sku: "730077", qty: "400 шт", sum: "16 800 ₽", st: "оприходован" },
+        { date: "12.07.2026", num: "З-088", sku: "730077", qty: "350 шт", sum: "14 700 ₽", st: "оприходован" },
+        { date: "09.06.2026", num: "З-067", sku: "730077", qty: "300 шт", sum: "12 600 ₽", st: "оприходован" }
+      ]
+    },
+    kanc: {
+      name: "ООО «КанцОпт»",
+      inn: "7719123456",
+      city: "Москва",
+      contact: "Орлова Т. Д. · +7 495 700-40-50",
+      pay: "отсрочка 7 дней",
+      lead: "7–10 дней",
+      since: "апрель 2024",
+      ontime: "88%",
+      yearSum: "210 000 ₽",
+      note: "Сезон: школьные дневники. Сейчас партия в пути — новый заказ не дублировать.",
+      claims: [],
+      orders: [
+        { date: "14.08.2026", num: "З-119", sku: "120569", qty: "150 шт", sum: "11 700 ₽", st: "в пути" },
+        { date: "22.07.2026", num: "З-099", sku: "120569", qty: "200 шт", sum: "15 600 ₽", st: "оприходован" }
+      ]
+    },
+    textil: {
+      name: "ООО «ТекстильПро»",
+      inn: "6164123456",
+      city: "Ростов-на-Дону",
+      contact: "Магомедов Р. Х. · +7 863 210-08-08",
+      pay: "предоплата 100%",
+      lead: "12–18 дней (фура)",
+      since: "февраль 2023",
+      ontime: "84%",
+      yearSum: "390 000 ₽",
+      note: "Дешёвая микрофибра, но едет долго. Заказывать заранее, не впритык.",
+      claims: ["03.04.2026 — пересорт цвета, 40 шт. Вернули, зачёт в следующий заказ."],
+      orders: [
+        { date: "01.08.2026", num: "З-110", sku: "2204", qty: "600 шт", sum: "13 200 ₽", st: "оприходован" },
+        { date: "06.06.2026", num: "З-064", sku: "2204", qty: "500 шт", sum: "11 000 ₽", st: "оприходован" }
+      ]
+    },
+    accessory: {
+      name: "ООО «Аксессуар»",
+      inn: "7743123456",
+      city: "Москва",
+      contact: "Белов Д. Ю. · +7 499 321-00-77",
+      pay: "отсрочка 10 дней",
+      lead: "6–8 дней",
+      since: "май 2025",
+      ontime: "93%",
+      yearSum: "54 000 ₽",
+      note: "Новый поставщик сборок (бампер + плёнка). Пока мало истории — смотреть качество первой партии.",
+      claims: [],
+      orders: [
+        { date: "05.08.2026", num: "З-113", sku: "66201-KIT", qty: "40 шт", sum: "8 400 ₽", st: "оприходован" },
+        { date: "19.06.2026", num: "З-074", sku: "66201-KIT", qty: "30 шт", sum: "6 300 ₽", st: "оприходован" }
+      ]
+    }
+  };
+
+  var supplierModal = document.getElementById("mwd-supplier-modal");
+  var supplierClose = document.getElementById("mwd-supplier-close");
+  var supplierTitle = document.getElementById("mwd-supplier-title");
+  var supplierCard = document.getElementById("mwd-supplier-card");
+
+  function closeSupplierModal() {
+    if (!supplierModal) return;
+    supplierModal.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  function openSupplierModal(key) {
+    var s = SUPPLIER_CARDS[key];
+    if (!s || !supplierModal || !supplierCard) return;
+    if (supplierTitle) supplierTitle.textContent = s.name;
+    var facts = [
+      ["ИНН", s.inn],
+      ["Город", s.city],
+      ["Контакт", s.contact],
+      ["Оплата", s.pay],
+      ["Срок поставки", s.lead],
+      ["Работаем с", s.since],
+      ["Вовремя", s.ontime],
+      ["Закуп 2026", s.yearSum]
+    ];
+    var factsHtml = facts
+      .map(function (f) {
+        return (
+          '<div class="mwd-sup-fact"><div class="mwd-sup-fact-lab">' +
+          f[0] +
+          '</div><div class="mwd-sup-fact-val">' +
+          f[1] +
+          "</div></div>"
+        );
+      })
+      .join("");
+    var orderRows = s.orders
+      .map(function (o) {
+        return (
+          "<tr><td>" +
+          o.date +
+          '</td><td class="mwd-art">' +
+          o.num +
+          "</td><td>" +
+          o.sku +
+          '</td><td class="num">' +
+          o.qty +
+          '</td><td class="num">' +
+          o.sum +
+          "</td><td>" +
+          o.st +
+          "</td></tr>"
+        );
+      })
+      .join("");
+    var claimsHtml = s.claims.length
+      ? s.claims
+          .map(function (c) {
+            return '<p class="mwd-sup-claim">' + c + "</p>";
+          })
+          .join("")
+      : '<p class="mwd-sup-empty">претензий нет</p>';
+    supplierCard.innerHTML =
+      '<div class="mwd-sup-facts">' +
+      factsHtml +
+      "</div>" +
+      '<h4 class="mwd-sup-h">История заказов</h4>' +
+      '<div class="mwd-table-wrap"><table class="mwd-table"><thead><tr>' +
+      "<th>Дата</th><th>№</th><th>Артикул</th><th class=\"num\">Кол-во</th><th class=\"num\">Сумма</th><th>Статус</th>" +
+      "</tr></thead><tbody>" +
+      orderRows +
+      "</tbody></table></div>" +
+      '<h4 class="mwd-sup-h">Претензии</h4>' +
+      claimsHtml +
+      '<h4 class="mwd-sup-h">Заметка</h4>' +
+      '<p class="mwd-sup-note">' +
+      s.note +
+      "</p>";
+    supplierModal.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  if (purchaseTable) {
+    purchaseTable.addEventListener("click", function (e) {
+      var btn = e.target.closest(".mwd-sup-link");
+      if (btn && purchaseTable.contains(btn)) {
+        openSupplierModal(btn.getAttribute("data-supplier") || "");
+        return;
+      }
+      var row = e.target.closest("tr.mwd-pur-row");
+      if (!row || !row.classList.contains("mwd-sa-asm-clickable")) return;
+      setPurLinkFilterFromRow(row);
+    });
+  }
+  if (supplierClose) {
+    supplierClose.addEventListener("click", closeSupplierModal);
+  }
+  if (supplierModal) {
+    supplierModal.addEventListener("click", function (e) {
+      if (e.target === supplierModal) closeSupplierModal();
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var preorderModalEsc = document.getElementById("mwd-preorder-modal");
+    if (preorderModalEsc && !preorderModalEsc.hidden) {
+      closePreorderModal();
+      return;
+    }
+    if (supplierModal && !supplierModal.hidden) {
+      closeSupplierModal();
+    }
+  });
+
+  // ── Предзаказ: печать / Excel по поставщикам ──
+  var preorderModal = document.getElementById("mwd-preorder-modal");
+  var preorderClose = document.getElementById("mwd-preorder-close");
+  var preorderSheets = document.getElementById("mwd-preorder-sheets");
+  var preorderPrintBtn = document.getElementById("mwd-preorder-print");
+  var preorderExcelBtn = document.getElementById("mwd-preorder-excel");
+  var preorderOpenBtn = document.getElementById("mwd-purchase-preorder");
+  var lastPreorderGroups = [];
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function cellText(tr, n) {
+    var td = tr.children[n];
+    return td ? (td.textContent || "").replace(/\s+/g, " ").trim() : "";
+  }
+
+  function parseQty(text) {
+    var t = String(text || "").replace(/[\s\u00a0\u202f]/g, "").replace(/[—–−-]/g, "");
+    if (!t) return 0;
+    var n = parseInt(t.replace(/\D/g, ""), 10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function parseMoney(text) {
+    var t = String(text || "")
+      .replace(/[\s\u00a0\u202f]/g, "")
+      .replace("₽", "")
+      .replace(",", ".");
+    var n = parseFloat(t.replace(/[^\d.]/g, ""));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatMoney(n) {
+    return Math.round(n).toLocaleString("ru-RU") + " ₽";
+  }
+
+  function formatPreorderDate(d) {
+    var dd = String(d.getDate()).padStart(2, "0");
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    return dd + "." + mm + "." + d.getFullYear();
+  }
+
+  function collectPreorderGroups() {
+    if (!purchaseTable) return [];
+    var groups = [];
+    var byKey = {};
+    purchaseTable.querySelectorAll("tbody tr").forEach(function (tr) {
+      var qty = parseQty(cellText(tr, 11));
+      if (!qty) return;
+      var supBtn = tr.querySelector(".mwd-sup-link");
+      var key = supBtn ? supBtn.getAttribute("data-supplier") || "" : "";
+      var name = "";
+      if (supBtn) {
+        var nameEl = supBtn.querySelector(".mwd-sup-name");
+        name = ((nameEl && nameEl.textContent) || "").replace(/\s+/g, " ").trim();
+      }
+      if (!name) name = cellText(tr, 13);
+      if (!key) key = name || "unknown";
+      if (!byKey[key]) {
+        byKey[key] = {
+          key: key,
+          name: name,
+          items: [],
+          sum: 0,
+        };
+        groups.push(byKey[key]);
+      }
+      var price = parseMoney(cellText(tr, 10));
+      var sum = parseMoney(cellText(tr, 12));
+      if (!sum) sum = price * qty;
+      byKey[key].items.push({
+        art: cellText(tr, 0),
+        name: cellText(tr, 1),
+        qty: qty,
+        price: price,
+        sum: sum,
+      });
+      byKey[key].sum += sum;
+    });
+    return groups;
+  }
+
+  function closePreorderModal() {
+    if (!preorderModal) return;
+    preorderModal.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  function renderPreorderSheets(groups) {
+    if (!preorderSheets) return;
+    var dateStr = formatPreorderDate(new Date());
+    preorderSheets.innerHTML = groups
+      .map(function (g, i) {
+        var num = "ПЗ-" + (120 + i);
+        g.num = num;
+        var card = SUPPLIER_CARDS[g.key] || {};
+        var metaParts = [card.contact, card.pay, card.lead ? "срок " + card.lead : ""]
+          .filter(Boolean);
+        var rows = g.items
+          .map(function (it) {
+            return (
+              "<tr><td class=\"mwd-art\">" +
+              escapeHtml(it.art) +
+              "</td><td>" +
+              escapeHtml(it.name) +
+              '</td><td class="num">' +
+              it.qty +
+              '</td><td class="num">' +
+              formatMoney(it.price) +
+              '</td><td class="num">' +
+              formatMoney(it.sum) +
+              "</td></tr>"
+            );
+          })
+          .join("");
+        return (
+          '<section class="mwd-preorder-sheet">' +
+          '<div class="mwd-preorder-sheet-top">' +
+          "<div><div class=\"mwd-preorder-kind\">Предзаказ · не документ 1С</div>" +
+          '<h4 class="mwd-preorder-num">' +
+          escapeHtml(num) +
+          "</h4></div>" +
+          '<div class="mwd-preorder-date">' +
+          dateStr +
+          " · склад РЦ</div></div>" +
+          '<div class="mwd-preorder-sup">' +
+          escapeHtml(g.name) +
+          "</div>" +
+          (metaParts.length
+            ? '<div class="mwd-preorder-meta">' +
+              escapeHtml(metaParts.join(" · ")) +
+              "</div>"
+            : "") +
+          "<table><thead><tr>" +
+          "<th>Артикул</th><th>Наименование</th>" +
+          '<th class="num">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th>' +
+          "</tr></thead><tbody>" +
+          rows +
+          "</tbody><tfoot><tr>" +
+          '<td colspan="3">Итого ' +
+          g.items.length +
+          " поз.</td><td></td>" +
+          '<td class="num">' +
+          formatMoney(g.sum) +
+          "</td></tr></tfoot></table>" +
+          '<div class="mwd-preorder-sign"><span>Товаровед ______________</span>' +
+          "<span>Получил ______________</span></div>" +
+          "</section>"
+        );
+      })
+      .join("");
+  }
+
+  function openPreorderModal() {
+    var groups = collectPreorderGroups();
+    if (!groups.length) {
+      showToast("нет позиций к заказу");
+      return;
+    }
+    lastPreorderGroups = groups;
+    renderPreorderSheets(groups);
+    if (!preorderModal) return;
+    preorderModal.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  function printPreorders() {
+    document.documentElement.classList.add("mwd-printing");
+    window.print();
+    document.documentElement.classList.remove("mwd-printing");
+  }
+
+  function csvCell(v) {
+    var s = String(v == null ? "" : v);
+    if (/[;"\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function downloadPreorderExcel(groups) {
+    var lines = ["Предзаказ;Поставщик;Артикул;Наименование;Кол-во;Цена;Сумма"];
+    groups.forEach(function (g) {
+      g.items.forEach(function (it) {
+        lines.push(
+          [
+            g.num,
+            g.name,
+            it.art,
+            it.name,
+            it.qty,
+            it.price,
+            it.sum,
+          ]
+            .map(csvCell)
+            .join(";")
+        );
+      });
+    });
+    var blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "predzakaz-" + formatPreorderDate(new Date()).replace(/\./g, "") + ".csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  if (preorderOpenBtn) {
+    preorderOpenBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      openPreorderModal();
+    });
+  }
+  if (preorderClose) {
+    preorderClose.addEventListener("click", closePreorderModal);
+  }
+  if (preorderModal) {
+    preorderModal.addEventListener("click", function (e) {
+      if (e.target === preorderModal) closePreorderModal();
+    });
+  }
+  if (preorderPrintBtn) {
+    preorderPrintBtn.addEventListener("click", function () {
+      printPreorders();
+    });
+  }
+  if (preorderExcelBtn) {
+    preorderExcelBtn.addEventListener("click", function () {
+      if (!lastPreorderGroups.length) return;
+      downloadPreorderExcel(lastPreorderGroups);
+      showToast("CSV скачан");
+    });
   }
 
   // ── Problems priority filter ──
@@ -2629,16 +4181,25 @@
     applyPrioFilter();
   }
 
-  // ── Sales: поиск + пагинация / выбор строк (как в мониторе) ──
+  // ── Sales: поиск + пагинация (как в мониторе) ──
   var salesSearch = document.getElementById("mwd-sales-search");
+  var salesMode = document.getElementById("mwd-sales-mode");
   var salesTable = document.getElementById("mwd-sales-table");
   var salesPrev = document.getElementById("mwd-sa-prev");
   var salesNext = document.getElementById("mwd-sa-next");
   var salesPageInfo = document.getElementById("mwd-sa-page-info");
   var salesPageSizeSelect = document.getElementById("mwd-sa-page-size");
+  var salesAsmFilterEl = document.getElementById("mwd-sa-asm-filter");
+  var salesAsmFilterTitle = document.getElementById("mwd-sa-asm-filter-title");
+  var salesAsmFilterText = document.getElementById("mwd-sa-asm-filter-text");
+  var salesAsmFilterClear = document.getElementById("mwd-sa-asm-filter-clear");
   var SALES_PAGE_SIZES = [5, 10, 25, 50];
+  var SALES_MODES = ["kit", "donor"];
   var salesPage = 1;
   var salesPageSize = 5;
+  var salesFilterListeners = [];
+  // { focusArt, arts: string[], mode: "component"|"kit" } | null
+  var salesAsmFilter = null;
 
   if (SALES_PAGE_SIZES.indexOf(saved.salesPageSize) >= 0) {
     salesPageSize = saved.salesPageSize;
@@ -2649,6 +4210,12 @@
   if (salesSearch && typeof saved.salesSearch === "string") {
     salesSearch.value = saved.salesSearch;
   }
+  if (salesMode) {
+    if (saved.salesMode === "all") salesMode.value = "";
+    else if (SALES_MODES.indexOf(saved.salesMode) >= 0) {
+      salesMode.value = saved.salesMode;
+    }
+  }
 
   function salesAllRows() {
     if (!salesTable) return [];
@@ -2657,14 +4224,184 @@
     );
   }
 
+  function salesRowName(row) {
+    if (!row) return "";
+    var el = row.querySelector(".mwd-sa-name");
+    var raw = ((el && el.textContent) || "").trim();
+    return raw
+      .replace(/\s*·\s*комплект\s*$/i, "")
+      .replace(/\s*·\s*комплектующая\s*$/i, "")
+      .trim();
+  }
+
+  function salesRowArt(row) {
+    if (!row) return "";
+    return normArticle(
+      row.getAttribute("data-art") ||
+        ((row.querySelector(".mwd-sa-art") || {}).textContent || "")
+    );
+  }
+
+  function salesAsmQty(row, which) {
+    if (!row) return 0;
+    var cell = row.querySelector(which === "in" ? ".mwd-sa-s3" : ".mwd-sa-s4");
+    var n = parseFloat(
+      String((cell && cell.textContent) || "")
+        .replace(/\s/g, "")
+        .replace(",", ".")
+    );
+    return isNaN(n) || n < 0 ? 0 : n;
+  }
+
+  function shortSalesName(name) {
+    var s = String(name || "").trim();
+    s = s.replace(/\s*\([^)]*\)\s*(С-Р)?\s*$/i, "").trim();
+    if (s.length > 42) s = s.slice(0, 40) + "…";
+    return s || "—";
+  }
+
+  function clearSalesAsmFilter(opts) {
+    opts = opts || {};
+    salesAsmFilter = null;
+    if (salesAsmFilterEl) salesAsmFilterEl.hidden = true;
+    if (salesAsmFilterText) salesAsmFilterText.textContent = "";
+    salesAllRows().forEach(function (row) {
+      row.classList.remove("is-asm-focus", "is-asm-related");
+    });
+    if (!opts.skipApply) {
+      salesPage = 1;
+      applySalesPagination();
+    }
+  }
+
+  function buildSalesAsmFilterBanner(focusArt, relatedArts, mode) {
+    var focusRow = null;
+    salesAllRows().forEach(function (row) {
+      if (salesRowArt(row) === focusArt) focusRow = row;
+    });
+    var focusName = shortSalesName(salesRowName(focusRow));
+    if (mode === "component") {
+      var outQty = salesAsmQty(focusRow, "out");
+      var parts = [];
+      relatedArts.forEach(function (art) {
+        if (art === focusArt) return;
+        var kitRow = null;
+        salesAllRows().forEach(function (row) {
+          if (salesRowArt(row) === art) kitRow = row;
+        });
+        if (!kitRow) return;
+        var kitIn = salesAsmQty(kitRow, "in");
+        parts.push(
+          shortSalesName(salesRowName(kitRow)) +
+            " — " +
+            formatRuInt(kitIn || 0) +
+            " шт"
+        );
+      });
+      var left =
+        focusName +
+        (outQty ? " " + formatRuInt(outQty) + " шт" : "") +
+        (parts.length ? " = " + parts.join(" + ") : "");
+      return {
+        title: "Сборки с этим товаром",
+        text: left || "Показаны комплектующая и связанные сборки",
+      };
+    }
+    var bits = [];
+    relatedArts.forEach(function (art) {
+      if (art === focusArt) return;
+      var partRow = null;
+      salesAllRows().forEach(function (row) {
+        if (salesRowArt(row) === art) partRow = row;
+      });
+      if (!partRow) {
+        bits.push(art);
+        return;
+      }
+      bits.push(shortSalesName(salesRowName(partRow)) + " (" + art + ")");
+    });
+    return {
+      title: "Состав комплекта",
+      text:
+        focusName +
+        (bits.length ? " → " + bits.join(", ") : " · состав по названию"),
+    };
+  }
+
+  function setSalesAsmFilterFromRow(row) {
+    if (!row) return;
+    var art = salesRowArt(row);
+    if (!art) return;
+    var usedIn = String(row.getAttribute("data-used-in") || "")
+      .split(",")
+      .map(normArticle)
+      .filter(Boolean);
+    var related = String(row.getAttribute("data-related") || "")
+      .split(",")
+      .map(normArticle)
+      .filter(Boolean);
+    var kind = row.getAttribute("data-kind") || "";
+    var mode = "";
+    var arts = [art];
+    if (kind === "donor" || kind === "component") {
+      if (!usedIn.length) {
+        showToast("не входит в сборки");
+        return;
+      }
+      mode = "component";
+      usedIn.forEach(function (a) {
+        if (arts.indexOf(a) < 0) arts.push(a);
+      });
+    } else if (kind === "kit") {
+      if (!related.length) {
+        showToast("состав не найден");
+        return;
+      }
+      mode = "kit";
+      related.forEach(function (a) {
+        if (arts.indexOf(a) < 0) arts.push(a);
+      });
+    } else {
+      showToast("не комплект и не комплектующая");
+      return;
+    }
+    if (
+      salesAsmFilter &&
+      salesAsmFilter.focusArt === art &&
+      salesAsmFilter.mode === mode
+    ) {
+      clearSalesAsmFilter();
+      return;
+    }
+    // Связанный фильтр показывает и сборки, и детали — сбрасываем «Тип».
+    if (salesMode && salesMode.value) {
+      salesMode.value = "";
+    }
+    salesAsmFilter = { focusArt: art, arts: arts, mode: mode };
+    var banner = buildSalesAsmFilterBanner(art, arts, mode);
+    if (salesAsmFilterTitle) salesAsmFilterTitle.textContent = banner.title;
+    if (salesAsmFilterText) salesAsmFilterText.textContent = banner.text;
+    if (salesAsmFilterEl) salesAsmFilterEl.hidden = false;
+    salesPage = 1;
+    applySalesPagination();
+  }
+
   function salesFilteredRows() {
     var q = salesSearch
       ? (salesSearch.value || "").trim().toLowerCase()
       : "";
+    var mode = salesMode ? salesMode.value || "" : "";
     return salesAllRows().filter(function (row) {
+      var art = salesRowArt(row);
+      if (salesAsmFilter && salesAsmFilter.arts.indexOf(art) < 0) {
+        return false;
+      }
+      if (mode) {
+        var kind = row.getAttribute("data-kind") || "";
+        if (kind !== mode) return false;
+      }
       if (!q) return true;
-      var art = (row.querySelector(".mwd-sa-art") || {}).textContent || "";
-      var name = (row.querySelector(".mwd-sa-name") || {}).textContent || "";
+      var name = salesRowName(row);
       return (
         art.toLowerCase().indexOf(q) !== -1 ||
         name.toLowerCase().indexOf(q) !== -1
@@ -2684,6 +4421,19 @@
     var visible = filtered.slice(start, start + salesPageSize);
     all.forEach(function (row) {
       row.classList.toggle("mwd-row-hidden", visible.indexOf(row) < 0);
+      var art = salesRowArt(row);
+      row.classList.toggle(
+        "is-asm-focus",
+        !!(salesAsmFilter && salesAsmFilter.focusArt === art)
+      );
+      row.classList.toggle(
+        "is-asm-related",
+        !!(
+          salesAsmFilter &&
+          salesAsmFilter.focusArt !== art &&
+          salesAsmFilter.arts.indexOf(art) >= 0
+        )
+      );
     });
     if (salesPageInfo) {
       salesPageInfo.textContent =
@@ -2694,11 +4444,15 @@
     if (salesPageSizeSelect) {
       salesPageSizeSelect.value = String(salesPageSize);
     }
+    salesFilterListeners.forEach(function (fn) {
+      fn(filtered);
+    });
     if (!opts.skipSave) {
       saveState({
         salesPage: salesPage,
         salesPageSize: salesPageSize,
         salesSearch: salesSearch ? salesSearch.value || "" : "",
+        salesMode: salesMode ? salesMode.value || "" : "",
       });
     }
   }
@@ -2735,6 +4489,23 @@
         applySalesPagination();
       });
     }
+    if (salesMode) {
+      salesMode.addEventListener("change", function () {
+        salesPage = 1;
+        applySalesPagination();
+      });
+    }
+    if (salesAsmFilterClear) {
+      salesAsmFilterClear.addEventListener("click", function () {
+        clearSalesAsmFilter();
+      });
+    }
+    salesTable.addEventListener("click", function (e) {
+      if (e.target.closest(".btn-chart-icon")) return;
+      var row = e.target.closest("tr.mwd-sa-row");
+      if (!row || !row.classList.contains("mwd-sa-asm-clickable")) return;
+      setSalesAsmFilterFromRow(row);
+    });
     applySalesPagination({ skipSave: true });
   }
 
@@ -2814,13 +4585,33 @@
     syncSalesStickyTops();
     window.addEventListener("resize", syncSalesStickyTops);
 
-    // Итоги по периоду — одна шкала на всю строку
-    applyHeatGroup(
-      Array.prototype.slice.call(
-        salesTable.querySelectorAll('.mwd-sa-hm[data-hm-group="totals"]')
-      ),
-      heatRwG
-    );
+    function updateSalesTotals(rows) {
+      var totalCells = Array.prototype.slice.call(
+        salesTable.querySelectorAll(
+          '.mwd-sa-totals-row .mwd-sa-hm[data-hm-group="totals"]'
+        )
+      );
+      if (!totalCells.length) return;
+      var sums = totalCells.map(function () {
+        return 0;
+      });
+      (rows || []).forEach(function (row) {
+        var cells = row.querySelectorAll('.mwd-sa-hm[data-hm-group="row"]');
+        var i;
+        for (i = 0; i < sums.length && i < cells.length; i++) {
+          sums[i] += parseFloat(cells[i].getAttribute("data-v")) || 0;
+        }
+      });
+      totalCells.forEach(function (cell, idx) {
+        var v = Math.round(sums[idx]);
+        cell.setAttribute("data-v", String(v));
+        cell.textContent = String(v);
+      });
+      applyHeatGroup(totalCells, heatRwG);
+    }
+
+    salesFilterListeners.push(updateSalesTotals);
+    updateSalesTotals(salesFilteredRows());
 
     // По каждой строке товара — своя шкала (как в Excel «по строке»)
     salesTable.querySelectorAll("tbody tr").forEach(function (row) {
@@ -2836,7 +4627,7 @@
       cell.style.backgroundColor = retPctColor(pct);
     });
 
-    // ── График цена / шт в модалке ──
+    // ── График: цена / продажи / остаток в модалке ──
     var chartSvg = document.getElementById("mwd-sa-chart-svg");
     var chartCap = document.getElementById("mwd-sa-chart-cap");
     var chartModal = document.getElementById("mwd-sa-chart-modal");
@@ -2849,20 +4640,35 @@
     );
 
     function parseSeries(str) {
-      return (str || "")
-        .split(",")
-        .map(function (x) {
-          return parseFloat(x);
-        })
-        .filter(function (x) {
-          return !isNaN(x);
-        });
+      if (!str) return [];
+      return str.split(",").map(function (x) {
+        var n = parseFloat(x);
+        return isNaN(n) ? 0 : n;
+      });
     }
 
     function niceMax(v) {
       if (v <= 0) return 1;
       var p = Math.pow(10, Math.floor(Math.log10(v)));
       return Math.ceil(v / p) * p;
+    }
+
+    // Демо-остаток: старт ≈ 6 дней покрытия, закупка каждые 5 дней.
+    function mockStockFromSales(sales) {
+      var maxSale = 1;
+      var i;
+      for (i = 0; i < sales.length; i++) {
+        if (sales[i] > maxSale) maxSale = sales[i];
+      }
+      var cover = Math.round(maxSale * 6);
+      var s = cover;
+      var out = [];
+      for (i = 0; i < sales.length; i++) {
+        if (i > 0 && i % 5 === 0) s += cover;
+        out.push(s);
+        s = Math.max(0, s - sales[i]);
+      }
+      return out;
     }
 
     function openChartModal() {
@@ -2880,66 +4686,84 @@
     function renderPriceQtyChart(row) {
       if (!chartSvg) return;
       var art = ((row.querySelector(".mwd-sa-art") || {}).textContent || "").trim();
-      var name = ((row.querySelector(".mwd-sa-name") || {}).textContent || "").trim();
-      var qtys = Array.prototype.map.call(
+      var name = salesRowName(row);
+      var sales = Array.prototype.map.call(
         row.querySelectorAll('.mwd-sa-hm[data-hm-group="row"]'),
         function (c) {
           return parseFloat(c.getAttribute("data-v")) || 0;
         }
       );
       var prices = parseSeries(row.getAttribute("data-prices"));
-      var n = Math.min(qtys.length, prices.length, dateLabels.length);
+      var stock = parseSeries(row.getAttribute("data-stock"));
+      var n = Math.min(sales.length, prices.length, dateLabels.length);
       if (!n) return;
 
-      qtys = qtys.slice(0, n);
+      sales = sales.slice(0, n);
       prices = prices.slice(0, n);
+      stock = stock.length >= n ? stock.slice(0, n) : mockStockFromSales(sales);
       var labels = dateLabels.slice(0, n);
 
-      // Формат как на скетче: две полосы (цена сверху, шт снизу), общие оси
+      // Три полосы: цена ₽ сверху, продажи шт, остаток шт. Общие оси по датам.
       var W = 680;
-      var H = 280;
-      var padL = 56;
-      var padR = 24;
-      var padT = 18;
+      var H = 340;
+      var padL = 72;
+      var padR = 28;
+      var padT = 16;
       var padB = 36;
-      var gap = 16;
+      var gap = 12;
       var plotW = W - padL - padR;
       var plotH = H - padT - padB;
-      var bandH = (plotH - gap) / 2;
-      var priceTop = padT;
-      var qtyTop = padT + bandH + gap;
+      var bandH = (plotH - gap * 2) / 3;
       var axisY = padT + plotH;
 
-      var pMax = niceMax(Math.max.apply(null, prices.concat([1])));
-      var qMax = niceMax(Math.max.apply(null, qtys.concat([1])));
+      var bands = [
+        {
+          top: padT,
+          max: niceMax(Math.max.apply(null, prices.concat([1]))),
+          unit: "₽",
+          label: "цена",
+          color: "#0f766e",
+          vals: prices,
+        },
+        {
+          top: padT + bandH + gap,
+          max: niceMax(Math.max.apply(null, sales.concat([1]))),
+          unit: "шт",
+          label: "продажи",
+          color: "#c2410c",
+          vals: sales,
+        },
+        {
+          top: padT + (bandH + gap) * 2,
+          max: niceMax(Math.max.apply(null, stock.concat([1]))),
+          unit: "шт",
+          label: "ост",
+          color: "#1d66d1",
+          vals: stock,
+        },
+      ];
 
       function xAt(i) {
         return padL + (n === 1 ? plotW / 2 : (i * plotW) / (n - 1));
       }
       function yInBand(bandTop, v, vmax) {
         var t = Math.max(0, Math.min(1, v / vmax));
-        // небольшой внутренний отступ, чтобы линия не липла к краям полосы
         var inner = 8;
         return bandTop + inner + (bandH - inner * 2) * (1 - t);
       }
-      function yPrice(v) {
-        return yInBand(priceTop, v, pMax);
-      }
-      function yQty(v) {
-        return yInBand(qtyTop, v, qMax);
-      }
 
-      function poly(vals, yFn) {
+      function poly(vals, band) {
         return vals
           .map(function (v, i) {
-            return xAt(i).toFixed(1) + "," + yFn(v).toFixed(1);
+            return xAt(i).toFixed(1) + "," + yInBand(band.top, v, band.max).toFixed(1);
           })
           .join(" ");
       }
 
       var xTicks = "";
       var step = n > 10 ? 2 : 1;
-      for (var i = 0; i < n; i += step) {
+      var i;
+      for (i = 0; i < n; i += step) {
         var lab = labels[i].replace(/\/20\d\d/, "");
         var x = xAt(i);
         xTicks +=
@@ -2962,32 +4786,64 @@
           "</text>";
       }
 
-      // лёгкие горизонтали только внутри полос
+      var b;
       var guides = "";
-      [0.5].forEach(function (t) {
-        var yp = priceTop + bandH * (1 - t);
-        var yq = qtyTop + bandH * (1 - t);
+      var seps = "";
+      var lines = "";
+      var labelsSvg = "";
+      for (b = 0; b < bands.length; b++) {
+        var band = bands[b];
+        var yMid = band.top + bandH * 0.5;
         guides +=
           '<line x1="' +
           padL +
           '" y1="' +
-          yp +
+          yMid +
           '" x2="' +
           (W - padR) +
           '" y2="' +
-          yp +
+          yMid +
           '" stroke="#eef2f7"/>';
-        guides +=
-          '<line x1="' +
-          padL +
-          '" y1="' +
-          yq +
-          '" x2="' +
+        if (b > 0) {
+          var sepY = band.top - gap / 2;
+          seps +=
+            '<line x1="' +
+            padL +
+            '" y1="' +
+            sepY +
+            '" x2="' +
+            (W - padR) +
+            '" y2="' +
+            sepY +
+            '" stroke="#e2e8f0" stroke-dasharray="4 4"/>';
+        }
+        lines +=
+          '<polyline fill="none" stroke="' +
+          band.color +
+          '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' +
+          poly(band.vals, band) +
+          '"/>';
+        labelsSvg +=
+          '<text x="' +
+          (padL - 8) +
+          '" y="' +
+          (band.top + bandH / 2 + 4) +
+          '" text-anchor="end" font-size="11" font-weight="700" fill="' +
+          band.color +
+          '">' +
+          band.label +
+          "</text>";
+        labelsSvg +=
+          '<text x="' +
           (W - padR) +
-          '" y2="' +
-          yq +
-          '" stroke="#eef2f7"/>';
-      });
+          '" y="' +
+          (band.top + 12) +
+          '" text-anchor="end" font-size="9" fill="#94a3b8">' +
+          band.max +
+          " " +
+          band.unit +
+          "</text>";
+      }
 
       chartSvg.setAttribute("viewBox", "0 0 " + W + " " + H);
       chartSvg.innerHTML =
@@ -2997,7 +4853,6 @@
         H +
         '" fill="#fff"/>' +
         guides +
-        // оси «уголком», как на скетче
         '<line x1="' +
         padL +
         '" y1="' +
@@ -3016,47 +4871,9 @@
         '" y2="' +
         axisY +
         '" stroke="#334155" stroke-width="1.4"/>' +
-        // разделитель полос
-        '<line x1="' +
-        padL +
-        '" y1="' +
-        (qtyTop - gap / 2) +
-        '" x2="' +
-        (W - padR) +
-        '" y2="' +
-        (qtyTop - gap / 2) +
-        '" stroke="#e2e8f0" stroke-dasharray="4 4"/>' +
-        '<polyline fill="none" stroke="#0f766e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' +
-        poly(prices, yPrice) +
-        '"/>' +
-        '<polyline fill="none" stroke="#1d66d1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' +
-        poly(qtys, yQty) +
-        '"/>' +
-        // подписи слева у полос — как на скетче
-        '<text x="' +
-        (padL - 8) +
-        '" y="' +
-        (priceTop + bandH / 2 + 4) +
-        '" text-anchor="end" font-size="12" font-weight="700" fill="#0f766e">цена</text>' +
-        '<text x="' +
-        (padL - 8) +
-        '" y="' +
-        (qtyTop + bandH / 2 + 4) +
-        '" text-anchor="end" font-size="12" font-weight="700" fill="#1d66d1">ост</text>' +
-        '<text x="' +
-        (W - padR) +
-        '" y="' +
-        (priceTop + 12) +
-        '" text-anchor="end" font-size="9" fill="#94a3b8">' +
-        pMax +
-        " ₽</text>" +
-        '<text x="' +
-        (W - padR) +
-        '" y="' +
-        (qtyTop + 12) +
-        '" text-anchor="end" font-size="9" fill="#94a3b8">' +
-        qMax +
-        " шт</text>" +
+        seps +
+        lines +
+        labelsSvg +
         xTicks;
 
       if (chartCap) {
@@ -3091,4 +4908,5 @@
       }
     });
   }
+
 })();

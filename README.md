@@ -1,80 +1,51 @@
-# Кабинет товароведа — DEMO (без бэкенда)
+# Кабинет товароведа — DEMO (статика)
 
-Статичная копия рабочего дня товароведа из MirOpt Stats.  
-Данные вымышленные (мок). Кнопки кликаются в браузере, на сервер ничего не уходит.
+Автономная копия демо-кабинета из MirOptStats. Только вёрстка и мок-данные в браузере — сервер не нужен.
 
 ## Что внутри
 
-| Экран | Зачем |
-|--------|--------|
-| 1. Анализ продаж | Ведомость, теплокарта дней, график цена/шт |
-| 2. Сборка и остаток | Сборки, остатки |
-| 3. Анализ закупки | Корзина закупки |
-| 4. Паспорт / карточки / архив | Паспорт товара, передача менеджеру |
-| 5. Проблемы с товаром | Список проблем |
+| Файл | Назначение |
+|------|------------|
+| `index.html` | Страница демо |
+| `css/merchandiser_workflow_demo.css` | Стили |
+| `js/merchandiser_workflow_demo.js` | Логика, табы, моки |
 
-## Как открыть у себя
+## Локально
 
-Двойной клик по `index.html` **или** из папки:
+Откройте `index.html` в браузере или поднимите простой сервер:
 
 ```bash
-# Python (если установлен)
+cd merchandiser-demo
 python3 -m http.server 8080
-# потом http://localhost:8080
+# http://localhost:8080
 ```
 
-## Как залить на бесплатный хостинг (для заказчицы)
+## GitHub Pages (бесплатный хостинг)
 
-### Вариант A — GitHub Pages (рекомендую)
+1. Создайте **новый** публичный репозиторий на GitHub (например `merchandiser-demo`).
+2. Скопируйте **содержимое** этой папки в корень репозитория (не всю папку `miroptstats`, а только файлы из `merchandiser-demo/`).
+3. Закоммитьте и запушьте в ветку `main`.
+4. В репозитории: **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main / (root)** → Save.
+5. Через 1–2 минуты сайт будет по адресу `https://<ваш-логин>.github.io/<имя-репо>/`.
 
-1. Создай **новый** репозиторий на GitHub (например `kabinet-tovaroveda-demo`).
-2. Залей **содержимое этой папки** в корень репозитория (`index.html` должен быть в корне).
-3. Settings → Pages → Source: **Deploy from a branch** → ветка `main` / папка `/ (root)`.
-4. Через пару минут ссылка вида:  
-   `https://ТВОЙ-ЛОГИН.github.io/kabinet-tovaroveda-demo/`
+Файл `.nojekyll` уже лежит в папке — GitHub не будет пропускать файлы, начинающиеся с `_`.
 
-Команды (из этой папки):
+### Вариант: папка внутри большого репо
+
+Если пушите весь `miroptstats`, в Pages укажите папку `/merchandiser-demo` вместо root. URL будет `https://<логин>.github.io/<репо>/merchandiser-demo/` — пути к css/js от этого не ломаются.
+
+## Обновление из основного проекта
+
+После правок в Django-версии:
 
 ```bash
-git init
-git add .
-git commit -m "demo: кабинет товароведа (статика)"
-git branch -M main
-git remote add origin https://github.com/ТВОЙ-ЛОГИН/kabinet-tovaroveda-demo.git
-git push -u origin main
+cp djangoapp/static/css/merchandiser_workflow_demo.css merchandiser-demo/css/
+cp djangoapp/static/js/merchandiser_workflow_demo.js merchandiser-demo/js/
+# HTML: контент из marketplaces/templates/marketplaces/merchandiser_workflow_demo.html
+# (блок {% block content %}, без Django-тегов) — вставить в index.html между <div class="demo-shell"> и </div>
 ```
 
-### Вариант B — Netlify Drop
+## Ограничения
 
-1. Открой [https://app.netlify.com/drop](https://app.netlify.com/drop)
-2. Перетащи всю папку `demo-kabinet-tovaroveda` на страницу
-3. Получишь ссылку вида `https://что-то.netlify.app`
-
-### Вариант C — Cloudflare Pages / Vercel
-
-То же самое: новый проект → upload этой папки или git-репозиторий с `index.html` в корне.
-
-## Структура
-
-```
-demo-kabinet-tovaroveda/
-  index.html
-  README.md
-  css/
-    app.css
-    merchandiser_workflow_demo.css
-  js/
-    merchandiser_workflow_demo.js
-```
-
-## Важно сказать заказчице
-
-- Это **макет с живыми кнопками**, не боевая система.
-- Цифры и товары — учебные.
-- Вход не нужен.
-- Полная версия живёт в основном продукте MirOpt Stats (с 1С, мониторами Ozon/WB и т.д.).
-
-## Откуда взято
-
-Синхронизировано с демо в основном проекте:  
-`/shops/merchandiser/demo/` (`merchandiser_workflow_demo.html` + css/js).
+- Нет входа, нет API, нет 1С — всё на моках в JS.
+- Состояние частично хранится в `localStorage` браузера.
