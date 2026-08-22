@@ -68,7 +68,7 @@
 
     <div class="mwd-main">
 
-      {# ═══ 1. Анализ продаж ═══ #}
+      <!-- ═══ 1. Анализ продаж ═══ -->
       <section class="mwd-screen is-active" data-screen-panel="sales">
         <h3 class="mwd-h">Анализ продаж</h3>
         <p class="mwd-sub">После списания остатков в 1С (FBO/FBS) · левые колонки зафиксированы, период листается вправо</p>
@@ -465,7 +465,7 @@
           </table>
         </div>
 
-        {# Пагинация и «Строк» — как в мониторе Ozon/WB (ozon_monitor.js footer) #}
+        <!-- Пагинация и «Строк» — как в мониторе Ozon/WB (ozon_monitor.js footer) -->
         <div class="mwd-sa-footer" id="mwd-sa-footer">
           <button type="button" class="mwd-btn mwd-btn-primary" id="mwd-sa-prev">Назад</button>
           <span class="mwd-sa-page-info" id="mwd-sa-page-info">Страница 1 из 1</span>
@@ -516,7 +516,7 @@
 
       </section>
 
-      {# ═══ 2. Сборка и остаток ═══ #}
+      <!-- ═══ 2. Сборка и остаток ═══ -->
       <section class="mwd-screen" data-screen-panel="assembly">
         <div class="mwd-h-row">
           <h3 class="mwd-h">Сборка и остаток</h3>
@@ -608,7 +608,7 @@
               </tr>
             </thead>
             <tbody>
-              {# —— Готовые сборки: состав читается из скобок в названии —— #}
+              <!-- —— Готовые сборки: состав читается из скобок в названии —— -->
               <tr class="mwd-asm-row" data-art="88010" data-kind="kit" data-owner="olga" data-in-asm="100" data-stock="108" data-price="284" data-deficit="0" data-status="assembly">
                 <td class="mwd-art">88010</td>
                 <td class="mwd-asm-name">Пример набор (кошелёк) (91044+91045)</td>
@@ -670,7 +670,7 @@
                 <td><span class="mwd-st mwd-st-ok">ок</span></td>
               </tr>
 
-              {# —— Комплектующие: обычные имена; роль = «упомянуты в скобках комплекта» —— #}
+              <!-- —— Комплектующие: обычные имена; роль = «упомянуты в скобках комплекта» —— -->
               <tr class="mwd-asm-row" data-art="91044" data-kind="donor" data-owner="olga" data-in-asm="100" data-stock="112" data-price="254" data-deficit="0" data-status="ok">
                 <td class="mwd-art">91044</td>
                 <td class="mwd-asm-name">Кошелёк женский экокожа чёрный</td>
@@ -726,7 +726,7 @@
         </div>
       </section>
 
-      {# ═══ 3. Анализ закупки ═══ #}
+      <!-- ═══ 3. Анализ закупки ═══ -->
       <section class="mwd-screen" data-screen-panel="purchase">
         <h3 class="mwd-h">Анализ закупки товара</h3>
 
@@ -978,7 +978,7 @@
           </div>
       </section>
 
-      {# ═══ 4. Паспорт / карточки / архив ═══ #}
+      <!-- ═══ 4. Паспорт / карточки / архив ═══ -->
       <section class="mwd-screen" data-screen-panel="passport">
         <h3 class="mwd-h">Паспорт / карточки / архив</h3>
 
@@ -989,7 +989,7 @@
           <button type="button" class="mwd-subtab" data-sub="archive">Карточки в архив</button>
         </div>
 
-        {# ─── 4.0 Ведомость ─── #}
+        <!-- ─── 4.0 Ведомость ─── -->
         <div class="mwd-subpanel is-active" data-sub-panel="vedomost">
           <div class="mwd-ved-bar" id="mwd-ved-bar">
             <label class="mwd-ved-field mwd-ved-field-search">
@@ -1205,7 +1205,7 @@
           <p class="mwd-footnote">Источник: выгрузка 1С (остатки/номенклатура) — демо</p>
         </div>
 
-        {# ─── 4.1 Паспорт ─── #}
+        <!-- ─── 4.1 Паспорт ─── -->
         <div class="mwd-subpanel" data-sub-panel="pass">
           <div class="mwd-mode-toggle">
             <button type="button" class="mwd-chip is-active" data-pass-mode="new">Новый товар</button>
@@ -1242,7 +1242,7 @@
 
           <form class="mwd-passport" id="mwd-passport-form" autocomplete="off" onsubmit="return false;">
 
-            {# —— Вкладка 1: Главное и Документы —— #}
+            <!-- —— Вкладка 1: Главное и Документы —— -->
             <div class="mwd-pass-tabpanel is-active" data-pass-tab-panel="main" role="tabpanel">
               <div class="mwd-pass-main-layout">
                 <div class="mwd-pass-main-left">
@@ -1394,7 +1394,7 @@
               </div>
             </div>
 
-            {# —— Вкладка 2: Названия для кабинетов —— #}
+            <!-- —— Вкладка 2: Названия для кабинетов —— -->
             <div class="mwd-pass-tabpanel" data-pass-tab-panel="names" role="tabpanel" hidden>
               <fieldset class="mwd-pass-sec mwd-pass-names">
                 <legend>Названия для кабинетов</legend>
@@ -1425,7 +1425,7 @@
               </fieldset>
             </div>
 
-            {# —— Вкладка 3: Логистика и Габариты (только техника) —— #}
+            <!-- —— Вкладка 3: Логистика и Габариты (только техника) —— -->
             <div class="mwd-pass-tabpanel" data-pass-tab-panel="logistics" role="tabpanel" hidden>
               <div class="mwd-dims-pair">
                 <fieldset class="mwd-pass-sec mwd-dims-card">
@@ -1523,7 +1523,7 @@
               </fieldset>
             </div>
 
-            {# —— Вкладка 4: Контент и Маркетинг —— #}
+            <!-- —— Вкладка 4: Контент и Маркетинг —— -->
             <div class="mwd-pass-tabpanel" data-pass-tab-panel="content" role="tabpanel" hidden>
               <fieldset class="mwd-pass-sec">
                 <legend>Тексты для карточек и менеджеров</legend>
@@ -1544,7 +1544,7 @@
               </fieldset>
             </div>
 
-            {# —— Вкладка 5: Медиафайлы —— #}
+            <!-- —— Вкладка 5: Медиафайлы —— -->
             <div class="mwd-pass-tabpanel" data-pass-tab-panel="media" role="tabpanel" hidden>
               <fieldset class="mwd-pass-sec">
                 <legend>Загрузки фото / видео</legend>
@@ -1566,7 +1566,7 @@
                     <span class="mwd-media-slot-status" data-slot-status>+</span>
                   </button>
                 </div>
-                {# скрытые поля для совместимости fillPassport #}
+                <!-- скрытые поля для совместимости fillPassport -->
                 <div id="mwd-pass-photos" class="mwd-visually-hidden" aria-hidden="true">
                   <div class="mwd-photo-ph" data-legacy-photo="0">фото</div>
                 </div>
@@ -1585,7 +1585,7 @@
           </div>
         </div>
 
-        {# ─── 4.2 Контроль карточек: матрица + задачи ─── #}
+        <!-- ─── 4.2 Контроль карточек: матрица + задачи ─── -->
         <div class="mwd-subpanel" data-sub-panel="cards">
           <h4 class="mwd-block-title">Контроль заведения карточек менеджерами</h4>
 
@@ -1627,7 +1627,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {# Озон: ГАА ЧМА ЧИА ООО · ВБ: ГАА ЧМА ЧИА ООО #}
+                  <!-- Озон: ГАА ЧМА ЧИА ООО · ВБ: ГАА ЧМА ЧИА ООО -->
                   <tr class="mwd-cards-row" data-art="401084" data-name="Мочалка овал">
                     <td class="mwd-art mwd-cards-sticky mwd-cards-s0">401084</td>
                     <td class="mwd-cards-sticky mwd-cards-s1">Мочалка овал</td>
@@ -1754,7 +1754,7 @@
                   </tr>
                 </thead>
                 <tbody id="mwd-cards-tasks-tbody">
-                  {# Новые сверху (по убыванию даты) #}
+                  <!-- Новые сверху (по убыванию даты) -->
                   <tr data-art="401084" data-cab="Озон ООО" data-reason="нет" data-date="2026-08-20">
                     <td>20.08.2026</td>
                     <td class="mwd-art">401084</td>
@@ -1801,7 +1801,7 @@
           </div>
         </div>
 
-        {# ─── 4.3 Архив ─── #}
+        <!-- ─── 4.3 Архив ─── -->
         <div class="mwd-subpanel" data-sub-panel="archive">
           <p class="mwd-sub">Статус ставится в ведомости: кнопка «Выбрать несколько» → галочки → «Карточки в архив». Здесь — сводка.</p>
           <div class="mwd-kanban" id="mwd-arch-kanban">
@@ -1821,7 +1821,7 @@
         </div>
       </section>
 
-      {# ═══ 5. Проблемы с товаром ═══ #}
+      <!-- ═══ 5. Проблемы с товаром ═══ -->
       <section class="mwd-screen" data-screen-panel="problems">
         <h3 class="mwd-h">Проблемы с товаром</h3>
         <p class="mwd-sub">Только UI · без реального workflow</p>
@@ -1966,7 +1966,7 @@
   </div>
 </div>
 
-{# Модалка: задача менеджеру из матрицы «Контроль карточек» #}
+<!-- Модалка: задача менеджеру из матрицы «Контроль карточек» -->
 <div class="mwd-modal-overlay" id="mwd-cards-task-modal" hidden>
   <div class="mwd-modal mwd-modal-sm" role="dialog" aria-modal="true" aria-labelledby="mwd-cards-task-title">
     <div class="mwd-modal-head">
